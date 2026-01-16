@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux'
 import { useTypedSelector } from '../../store'
 import {
   CCloseButton,
+  CFormLabel,
   CSidebar,
   CSidebarBrand,
   CSidebarFooter,
@@ -16,6 +17,7 @@ import AppSidebarNav from './AppSidebarNav'
 
 import { logo } from '@/public/brand/logo'
 import { sygnet } from '@/public/brand/sygnet'
+import Image from 'next/image'
 
 // sidebar nav config
 import navigation, { NavItem } from '../../_nav'
@@ -38,8 +40,18 @@ const AppSidebar = (): JSX.Element => {
     >
       <CSidebarHeader className="border-bottom">
         <CSidebarBrand as={Link} href="/">
-          <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} />
-          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
+          {/* <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} /> */}
+          {/* <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} /> */}
+          <Image
+            src="/images/LogoFlugminanoSemFundo.png" // sem ../../../public
+            alt="Logo Flugminano"
+            width={40} // obrigatório
+            height={40} // obrigatório
+            priority
+          />
+          {unfoldable === false && (
+            <CFormLabel style={{ fontWeight: 'bold' }}>Laboratório Flumignano</CFormLabel>
+          )}
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

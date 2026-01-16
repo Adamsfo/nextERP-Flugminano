@@ -32,7 +32,7 @@ const SelectEmpresa: React.FC = () => {
 
       let registrosDataFilter = registrosData.filter((item) => empresasId.includes(item.value))
 
-      setRegistros(registrosDataFilter.map((item) => ({ ...item, selected: false })))
+      // setRegistros(registrosDataFilter.map((item) => ({ ...item, selected: false })))
       setLoading(false)
 
       // Se o ID foi passado e existe no resultado, selecione-o

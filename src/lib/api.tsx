@@ -3,7 +3,7 @@
 import { ApiResponse, QueryParams } from '@/types/geral'
 
 const BASEAPI = [
-  'http://localhost:9000',
+  'http://100.109.186.36:9000',
   // 'http://201.71.153.116:9000',
   'Homologação',
   '1.0.32',
