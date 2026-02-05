@@ -79,6 +79,7 @@ export interface ClienteFornecedor {
   contribuinte: 'Sim' | 'Não'
   cnae?: string
   email?: string
+  email2?: string
   telefoneFixo?: string
   telefoneCelular?: string
   telefoneAlternativo?: string
@@ -90,6 +91,7 @@ export interface ClienteFornecedor {
   limiteCredito?: number
   observacao?: string
   empresaId: number
+  contato?: string
 }
 
 export interface FuncaoUsuario {
@@ -240,4 +242,39 @@ export interface TicketHistorico {
   data: Date
   usuarioId: number
   status: 'DISPONÍVEL' | 'PENDENTE' | 'CANCELADO' | 'UTILIZADO'
+}
+
+export interface Laboratorio {
+  id: number
+  nome: string
+  responsavelTecnico?: string
+  registroCRQ?: string
+  ativo: 'Sim' | 'Não'
+}
+
+export interface Analise {
+  id: number
+  laboratorioId: number
+  nome: string
+  metodo?: string
+  unidade?: string
+}
+
+export interface TabelaPreco {
+  id: number
+  laboratorioId: number
+  nome: string
+  valor: number
+  ativa: 'Sim' | 'Não'
+}
+
+export interface TabelaPrecoItem {
+  id: number
+  tabelaPrecoId: number
+  analiseId: number
+  prazoDias: number
+  vpmMinimo: number
+  vpmMaximo: number
+  lqMinimo: number
+  lqMaximo: number
 }

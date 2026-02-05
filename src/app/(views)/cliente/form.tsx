@@ -329,7 +329,7 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
           </CCol> */}
 
               <div className="w-100"></div>
-              <CCol md={5}>
+              <CCol md={6}>
                 <TextInputField
                   name="razaoSocialNome"
                   placeholder="Razão Social"
@@ -340,7 +340,7 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                 />
               </CCol>
 
-              <CCol md={5}>
+              <CCol md={6}>
                 <TextInputField
                   name="nomeFantasia"
                   placeholder="Nome Fantasia"
@@ -351,7 +351,7 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                 />
               </CCol>
 
-              <CCol md={2}>
+              {/* <CCol md={2}>
                 <div
                   className={`mydivborder ${errors.dataNascimento ? 'is-invalid' : ''}`}
                   style={{
@@ -400,7 +400,7 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                     )}
                   </div>
                 </div>
-              </CCol>
+              </CCol> */}
 
               {/* <CCol md={2}>
             <div className="mb-3">
@@ -473,18 +473,18 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                 />
               </CCol> */}
 
-              {/* <CCol md={6}>
-            <MaskedInputField
-              name="insEstadual"
-              placeholder="Inscrição Estadual"
-              value={formData.insEstadual || ''}
-              onChange={handleChange}
-              mask="9999999999-9" // Ajuste conforme necessário
-              invalid={!!errors.insEstadual}
-              feedbackMessage={errors.insEstadual}
-            />
-          </CCol>
-
+              <CCol md={2}>
+                <MaskedInputField
+                  name="insEstadual"
+                  placeholder="Inscrição Estadual"
+                  value={formData.insEstadual || ''}
+                  onChange={handleChange}
+                  mask="9999999999-9" // Ajuste conforme necessário
+                  invalid={!!errors.insEstadual}
+                  feedbackMessage={errors.insEstadual}
+                />
+              </CCol>
+              {/* 
           <CCol md={6}>
             <TextInputField
               name="insMunicipal"
@@ -520,7 +520,18 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                 />
               </CCol>
 
-              <CCol md={4}>
+              <CCol md={2}>
+                <TextInputField
+                  name="contato"
+                  placeholder="Contato"
+                  value={formData.contato ?? ''}
+                  onChange={handleChange}
+                  invalid={!!errors.contato}
+                  feedbackMessage={errors.contato}
+                />
+              </CCol>
+
+              <CCol md={6}>
                 <CFormFloating className="mb-3">
                   <CFormInput
                     type="email"
@@ -531,8 +542,24 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                     onChange={handleChange}
                     invalid={!!errors.email}
                   />
-                  <CFormLabel>e-mail</CFormLabel>
+                  <CFormLabel>e-mail Laudos</CFormLabel>
                   {errors.email && <CFormFeedback invalid>{errors.email}</CFormFeedback>}
+                </CFormFloating>
+              </CCol>
+
+              <CCol md={6}>
+                <CFormFloating className="mb-3">
+                  <CFormInput
+                    type="email"
+                    id="email2"
+                    name="email2"
+                    placeholder=" "
+                    value={formData.email2}
+                    onChange={handleChange}
+                    invalid={!!errors.email2}
+                  />
+                  <CFormLabel>e-mail Financeiro</CFormLabel>
+                  {errors.email2 && <CFormFeedback invalid>{errors.email2}</CFormFeedback>}
                 </CFormFloating>
               </CCol>
 

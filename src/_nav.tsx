@@ -1,6 +1,7 @@
 import React, { ElementType } from 'react'
 import {
   cilApplicationsSettings,
+  cilBeaker,
   cilColumns,
   cilExcerpt,
   cilFactory,
@@ -87,16 +88,16 @@ const _nav = [
       //   },
       //   href: '/estrutura',
       // },
-      // {
-      //   component: CNavItem,
-      //   name: 'Blind',
-      //   icon: <CIcon icon={cilExcerpt} customClassName="nav-icon" />,
-      //   badge: {
-      //     color: 'info-gradient',
-      //     // text: 'NEW',
-      //   },
-      //   href: '/blind',
-      // },
+      {
+        component: CNavItem,
+        name: 'Blind',
+        icon: <CIcon icon={cilExcerpt} customClassName="nav-icon" />,
+        badge: {
+          color: 'info-gradient',
+          // text: 'NEW',
+        },
+        href: '/blind',
+      },
       // {
       //   component: CNavItem,
       //   name: 'Fornecedor',
@@ -107,6 +108,36 @@ const _nav = [
       //   },
       //   href: '/fornecedor',
       // },
+      {
+        component: CNavItem,
+        name: 'Laboratório',
+        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        badge: {
+          color: 'info-gradient',
+          // text: 'NEW',
+        },
+        href: '/laboratorio',
+      },
+      {
+        component: CNavItem,
+        name: 'Análise',
+        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        badge: {
+          color: 'info-gradient',
+          // text: 'NEW',
+        },
+        href: '/analise',
+      },
+      {
+        component: CNavItem,
+        name: 'Tabela de Preço',
+        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        badge: {
+          color: 'info-gradient',
+          // text: 'NEW',
+        },
+        href: '/tabelapreco',
+      },
       {
         component: CNavItem,
         name: 'Cidade',
