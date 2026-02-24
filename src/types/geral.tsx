@@ -273,8 +273,9 @@ export interface TabelaPrecoItem {
   tabelaPrecoId: number
   analiseId: number
   prazoDias: number
-  vpmMinimo: number
-  vpmMaximo: number
-  lqMinimo: number
-  lqMaximo: number
+  vpmMinimo?: number
+  vpmMaximo?: number
+  lqMinimo?: number
+  lqMaximo?: number
+  valor: number
 }

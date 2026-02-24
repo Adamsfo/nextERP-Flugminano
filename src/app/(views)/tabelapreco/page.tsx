@@ -16,7 +16,7 @@ import {
 import { apiGeral } from '@/lib/geral'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete } from '@coreui/icons'
+import { cilAlignCenter, cilDelete, cilPencil } from '@coreui/icons'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { QueryParams } from '@/types/geral'
@@ -30,6 +30,7 @@ const Page = () => {
   const endpointApi = '/tabelapreco'
 
   const [search, setSearch] = useState('')
+  const [atualizar, setAtualizar] = useState(false)
   const router = useRouter()
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
@@ -63,7 +64,7 @@ const Page = () => {
 
             <CDropdownItem onClick={() => handleEditClick(item.id)}>
               <CTooltip content="Editar tabela de preço">
-                <CIcon icon={cilAlignCenter} size="xl" className="me-2" />
+                <CIcon icon={cilPencil} size="xl" className="me-2" />
               </CTooltip>
               Alterar
             </CDropdownItem>
@@ -129,6 +130,8 @@ const Page = () => {
                     search={search}
                     setSearch={setSearch}
                     handleNewClick={handleNewClick}
+                    atualizar={atualizar}
+                    setAtualizar={setAtualizar}
                   />
                 </CCol>
               </CRow>
@@ -138,6 +141,7 @@ const Page = () => {
                 columns={columns}
                 scopedColumns={{ show_details }}
                 search={search}
+                atualizar={atualizar}
                 filtroPorEmpresa={false}
               />
             </CCardBody>

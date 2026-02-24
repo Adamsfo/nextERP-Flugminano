@@ -29,6 +29,7 @@ const Page = () => {
   const endpoint = '/cliente'
   const endpointApi = '/clienteFornecedor'
   const [search, setSearch] = useState('')
+  const [atualizar, setAtualizar] = useState(false)
   // const [empresaId, setempresaId] = useState<number[]>([])
   const router = useRouter()
   const [modalMsg, setModalMsg] = useState(false)
@@ -127,6 +128,8 @@ const Page = () => {
                     search={search}
                     setSearch={setSearch}
                     handleNewClick={handleNewClick}
+                    atualizar={atualizar}
+                    setAtualizar={setAtualizar}
                   />
                 </CCol>
               </CRow>
@@ -137,6 +140,7 @@ const Page = () => {
                 search={search}
                 // empresaId={empresaId}
                 filtroFixo={{ tipo: 'Cliente' }}
+                atualizar={atualizar}
               />
             </CCardBody>
             <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>

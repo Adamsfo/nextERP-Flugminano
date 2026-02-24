@@ -42,16 +42,16 @@ const _nav = [
     },
     href: '/',
   },
-  // {
-  //   component: CNavItem,
-  //   name: 'Torneio',
-  //   // icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-  //   icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
-  //   badge: {
-  //     color: 'info-gradient',
-  //   },
-  //   href: '/torneio',
-  // },
+  {
+    component: CNavItem,
+    name: 'Torneio',
+    // icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+    badge: {
+      color: 'info-gradient',
+    },
+    href: '/torneio',
+  },
   // {
   //   component: CNavItem,
   //   name: 'Ticket',
