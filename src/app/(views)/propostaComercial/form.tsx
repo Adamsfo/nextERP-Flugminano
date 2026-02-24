@@ -24,9 +24,7 @@ import {
   ClienteFornecedor,
   EnderecoClienteFornecedor,
   FormPropsEdit,
-  Ticket,
-  TicketHistorico,
-  TorneioItem,
+  PropostaComercial,
 } from '@/types/geral'
 import PermissionGate from '@/components/auth/PermissionGate'
 import MaskedInputField from '@/components/tz/MaskedInputField'
@@ -37,29 +35,39 @@ import CButtonBack from '@/components/tz/CButtonBack'
 import SelectField from '@/components/tz/SelectField'
 import SelectPais from '@/components/select/SelectPais'
 import ModalMsg from '@/components/modal/ModalMsg'
-import SelectTorneio from '@/components/select/SelectTorneio'
 import SelectCliente from '@/components/select/SelectCliente'
-import SelectTorneioItem from '@/components/select/SelectTorneioItem'
-import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
-import TextInputFieldReais from '@/components/tz/TextInputFieldReais'
-import FormattedDateTime from '@/components/tz/FormattedDateTime'
 
-const initialFormData: Ticket = {
+const initialFormData: PropostaComercial = {
   id: 0,
+  empresaId: 1,
+  clienteFornecedorId: 0,
+  numero: '',
+  data: new Date(),
+  validade: undefined,
+  clienteNome: '',
+  clienteDocumento: '',
+  clienteEmail: '',
+  clienteTelefone: '',
+  enderecoRua: '',
+  enderecoNumero: '',
+  enderecoBairro: '',
+  enderecoCidade: '',
+  enderecoUf: '',
+  enderecoCep: '',
+  valorTotal: 0,
+  status: 'Rascunho',
+  observacao: '',
 }
 
-type Registro = Ticket
+type Registro = typeof initialFormData
 
-export default function CidadeForm({ params }: { params: FormPropsEdit }) {
-  const endpoint = '/ticket'
-  const endpointApi = '/ticket'
+export default function PropostaComercialForm({ params }: { params: FormPropsEdit }) {
+  const endpoint = '/propostaComercial'
+  const endpointApi = '/proposta'
   const router = useRouter()
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [formData, setFormData] = useState<Registro>(initialFormData)
-  const [ticketHistorico, setTicketHistorico] = useState<TicketHistorico[] | undefined>([]) // Estado para manter os registros da tabela
-  const [toneioItem, setTorneioItem] = useState<TorneioItem | undefined>() // Estado para manter os registros da tabela
   const empresaIdSelecionada = useTypedSelector((state) => state.empresaId)
-  const usuario = useTypedSelector((state) => state.usuario)
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -104,31 +112,13 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
     async function fetchData() {
       if (params.id) {
         const registro = await apiGeral.getResourceById(endpointApi, parseInt(params.id))
-        setFormData(registro as Registro)
-
-        const response = await apiGeral.getResource<TicketHistorico>('/tickethistorico', {
-          filters: { ticketId: parseInt(params.id) },
-          pageSize: 200,
-        })
-
-        setTicketHistorico(response.data)
+        setFormData(registro as unknown as Registro)
       }
     }
     if (params.id) {
       fetchData()
     }
   }, [params.id])
-
-  useEffect(() => {
-    async function fetchData() {
-      if (formData.torneioItemId) {
-        const registro = await apiGeral.getResourceById('/torneioitem', formData.torneioItemId)
-        setTorneioItem(registro as TorneioItem)
-      }
-    }
-
-    fetchData()
-  }, [formData.torneioItemId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -149,11 +139,9 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
           return
         }
         formData.empresaId = empresaIdSelecionada[0]
-        ret = await apiGeral.createResource<Registro>(endpointApi, {
-          ...formData,
-          usuarioId: usuario.id,
-        })
+        ret = await apiGeral.createResource<Registro>(endpointApi, formData)
       }
+      console.log('ret', ret)
       if (!ret.success) {
         setErrors({ api: ret.message || 'Erro desconhecido' })
         return
@@ -177,30 +165,11 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
   const validate = () => {
     const newErrors: { [key: string]: string } = {}
 
-    // if (!formData.nomeFantasia) newErrors.nomeFantasia = 'Nome fantasia é obrigatório.'
+    if (!formData.clienteNome) newErrors.clienteNome = 'Nome do cliente é obrigatório.'
     // if (!formData.razaoSocialNome) newErrors.razaoSocialNome = 'Razão social é obrigatório.'
-    // if (!formData.cnpjCpf) newErrors.cnpjCpf = 'CPF / CNPJ é obrigatório.'
+    if (!formData.clienteDocumento) newErrors.clienteDocumento = 'CPF / CNPJ é obrigatório.'
 
     return newErrors
-  }
-
-  const columns = [
-    // { key: 'id', _style: { width: '10%' }, label: 'Código' },
-    {
-      key: 'data',
-      _style: { width: '10%' },
-      label: 'Data do Lançamento',
-    },
-    { key: 'descricao', _style: { width: '50%' }, label: 'Descrição' },
-    { key: 'status', _style: { width: '10%' }, label: 'Status' },
-  ]
-
-  const data = (item: any) => {
-    return (
-      <td style={{ height: '110%' }}>
-        <FormattedDateTime date={item.data} />
-      </td>
-    )
   }
 
   return (
@@ -208,7 +177,9 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
       <CForm onSubmit={handleSubmit}>
         <CCard>
           <CCardHeader>
-            <strong>{params.id ? 'Alterando ticket' : 'Cadastrando ticket'}</strong>
+            <strong>
+              {params.id ? 'Alterando proposta comercial' : 'Cadastrando proposta comercial'}
+            </strong>
           </CCardHeader>
           <CCardBody>
             <CRow>
@@ -223,106 +194,68 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                   disabled={true}
                 />
               </CCol>
-              <CCol md={2}>
+
+              <CCol md={3}>
                 <TextInputField
-                  name="id"
-                  placeholder="Status Atual"
-                  value={formData.status || ''}
-                  onChange={handleChange}
-                  invalid={!!errors.status}
-                  feedbackMessage={errors.status}
+                  name="numero"
+                  placeholder="Número da Proposta"
+                  value={formData.numero ?? ''}
+                  // onChange={handleChange}
+                  invalid={!!errors.numero}
+                  feedbackMessage={errors.numero}
                   disabled={true}
                 />
+              </CCol>
+
+              <CCol md={3}>
+                <CFormFloating>
+                  <CFormInput
+                    type="date"
+                    name="data"
+                    id="data"
+                    placeholder="Data da Proposta"
+                    value={formData.data ? new Date(formData.data).toISOString().split('T')[0] : ''}
+                    onChange={handleChange}
+                    invalid={!!errors.data}
+                    disabled={true}
+                  />
+                  <CFormLabel htmlFor="data">Data da Proposta</CFormLabel>
+                  <CFormFeedback invalid>{errors.data}</CFormFeedback>
+                </CFormFloating>
+              </CCol>
+
+              <CCol md={3}>
+                <CFormFloating>
+                  <CFormInput
+                    type="date"
+                    name="validade"
+                    id="validade"
+                    placeholder="Data de Validade"
+                    value={
+                      formData.validade
+                        ? new Date(formData.validade).toISOString().split('T')[0]
+                        : ''
+                    }
+                    onChange={handleChange}
+                    invalid={!!errors.validade}
+                    // disabled={true}
+                  />
+                  <CFormLabel htmlFor="validade">Data de Validade</CFormLabel>
+                  <CFormFeedback invalid>{errors.validade}</CFormFeedback>
+                </CFormFloating>
               </CCol>
 
               <div className="w-100"></div>
 
               <CCol md={4}>
                 <SelectCliente
-                  id={formData.clienteId}
-                  setId={(clienteId) => handleChange(undefined, 'clienteId', clienteId)}
-                  invalid={!!errors.clienteId}
-                  feedbackMessage={errors.clienteId}
-                  disabled={formData.id !== 0}
+                  id={formData.clienteFornecedorId}
+                  setId={(clienteId) => handleChange(undefined, 'clienteFornecedorId', clienteId)}
+                  invalid={!!errors.clienteFornecedorId}
+                  feedbackMessage={errors.clienteFornecedorId}
+                  // disabled={formData.id !== 0}
                 ></SelectCliente>
               </CCol>
-
-              <CCol md={4}>
-                <SelectTorneio
-                  id={formData.torneioId}
-                  setId={(torneioId) => handleChange(undefined, 'torneioId', torneioId)}
-                  invalid={!!errors.torneioId}
-                  feedbackMessage={errors.torneioId}
-                  disabled={formData.id !== 0}
-                ></SelectTorneio>
-              </CCol>
-
-              <CCol md={4}>
-                <SelectTorneioItem
-                  id={formData.torneioItemId}
-                  setId={(torneioItemId) => handleChange(undefined, 'torneioItemId', torneioItemId)}
-                  torneioId={formData.torneioId}
-                  invalid={!!errors.torneioItemId}
-                  feedbackMessage={errors.torneioItemId}
-                  disabled={formData.id !== 0}
-                ></SelectTorneioItem>
-              </CCol>
-
-              <CCol xs={12}>
-                <CCard style={{ marginTop: '20px' }}>
-                  <CCardHeader>
-                    <strong>Pagamento</strong>
-                  </CCardHeader>
-                  <CCardBody>
-                    <CCol md={2}>
-                      <TextInputFieldReais
-                        name="totalInscricao"
-                        placeholder="Total"
-                        value={toneioItem?.totalInscricao ?? ''} // Mantém o valor decimal
-                        onChange={(name, rawValue) => handleChange(undefined, name, rawValue)}
-                        invalid={!!errors.totalInscricao}
-                        disabled
-                        feedbackMessage={errors.totalInscricao}
-                      />
-                    </CCol>
-                    <SelectField
-                      name="metodoPagamento"
-                      placeholder="Método de Pagamento"
-                      value={formData.metodoPagamento ?? ''}
-                      onChange={handleChange}
-                      options={[
-                        { value: 'Pagamento', label: 'Pagamento' },
-                        { value: 'Crédito na Conta', label: 'Crédito na Conta' },
-                      ]}
-                      invalid={!!errors.tipoRake}
-                      feedbackMessage={errors.tipoRake}
-                    />
-                  </CCardBody>
-                </CCard>
-              </CCol>
-
-              {formData.id !== 0 ? (
-                <CCol xs={12}>
-                  <CCard style={{ marginTop: '20px' }}>
-                    <CCardHeader>
-                      <strong>Histórico do Ticket</strong>
-                    </CCardHeader>
-                    <CCardBody>
-                      <SmartTableWrapper
-                        items={ticketHistorico}
-                        columns={columns}
-                        filtroPorEmpresa={false}
-                        columnFilter={false}
-                        columnSorter={false}
-                        itemsPerPageSelect={false}
-                        scopedColumns={{
-                          data,
-                        }}
-                      />
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-              ) : null}
 
               {/* <CCol md={2}>
                 <SelectField

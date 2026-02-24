@@ -52,6 +52,16 @@ const _nav = [
     },
     href: '/torneio',
   },
+  {
+    component: CNavItem,
+    name: 'Proposta Comercial',
+    // icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+    badge: {
+      color: 'info-gradient',
+    },
+    href: '/propostaComercial',
+  },
   // {
   //   component: CNavItem,
   //   name: 'Ticket',

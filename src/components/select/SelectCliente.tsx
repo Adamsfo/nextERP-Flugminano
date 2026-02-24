@@ -17,7 +17,7 @@ interface CustomMultiSelectProps {
 
 let timer: NodeJS.Timeout
 
-const SelectJogador: React.FC<CustomMultiSelectProps> = ({
+const SelectCliente: React.FC<CustomMultiSelectProps> = ({
   id,
   setId,
   setDescricao,
@@ -109,7 +109,7 @@ const SelectJogador: React.FC<CustomMultiSelectProps> = ({
           }}
           htmlFor="validationText"
         >
-          Jogador
+          Cliente
         </CFormLabel>
       </div>
       <CMultiSelect
@@ -136,4 +136,4 @@ const SelectJogador: React.FC<CustomMultiSelectProps> = ({
   )
 }
 
-export default SelectJogador
+export default SelectCliente

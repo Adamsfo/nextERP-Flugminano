@@ -279,3 +279,33 @@ export interface TabelaPrecoItem {
   lqMaximo?: number
   valor: number
 }
+
+export interface PropostaComercial {
+  id: number
+  empresaId: number
+  clienteFornecedorId: number
+
+  numero: string
+  data: Date
+  validade?: Date
+
+  // Snapshot cliente
+  clienteNome: string
+  clienteDocumento: string
+  clienteEmail?: string
+  clienteTelefone?: string
+
+  // Snapshot endereço
+  enderecoRua?: string
+  enderecoNumero?: string
+  enderecoBairro?: string
+  enderecoCidade?: string
+  enderecoUf?: string
+  enderecoCep?: string
+
+  valorTotal: number
+
+  status: 'Rascunho' | 'Enviada' | 'Aprovada' | 'Reprovada' | 'Cancelada' | 'Expirada'
+
+  observacao?: string
+}
