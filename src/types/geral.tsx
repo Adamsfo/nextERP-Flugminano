@@ -284,6 +284,7 @@ export interface PropostaComercial {
   id: number
   empresaId: number
   clienteFornecedorId: number
+  laboratorioId: number
 
   numero: string
   data: Date
@@ -308,4 +309,27 @@ export interface PropostaComercial {
   status: 'Rascunho' | 'Enviada' | 'Aprovada' | 'Reprovada' | 'Cancelada' | 'Expirada'
 
   observacao?: string
+  quantidadeAmostras?: number
+}
+
+export interface PropostaComercialItem {
+  id: number
+  propostaComercialId: number
+  analiseId: number
+
+  // Snapshot análise
+  analiseNome: string
+  metodo?: string
+  unidade?: string
+
+  prazoDias?: number
+
+  vpmMinimo?: number
+  vpmMaximo?: number
+  lqMinimo?: number
+  lqMaximo?: number
+
+  quantidade: number
+  valorUnitario: number
+  valorTotal: number
 }

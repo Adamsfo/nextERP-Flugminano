@@ -50,6 +50,7 @@ const Page = () => {
 
   const columns = [
     { key: 'id', _style: { width: '15%' }, label: 'Código' },
+    { key: 'laboratorio_nome', _style: { width: '15%' }, label: 'Laboratório' },
     { key: 'numero', _style: { width: '15%' }, label: 'Número da Proposta' },
     { key: 'clienteNome', _style: { minWidth: '100px' }, label: 'Nome' },
     { key: 'clienteDocumento', _style: { minWidth: '100px' }, label: 'Documento' },
