@@ -33,6 +33,8 @@ import {
   PropostaComercial,
   PropostaComercialItem,
   QueryParams,
+  TabelaPrecoItem,
+  Norma,
 } from '@/types/geral'
 import PermissionGate from '@/components/auth/PermissionGate'
 import MaskedInputField from '@/components/tz/MaskedInputField'
@@ -52,6 +54,9 @@ import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import SelectLaboratorio from '@/components/select/SelectLaboratorio'
 import SelectTabelaPreco from '@/components/select/SelectTabelaPreco'
 import TextInputFieldInteger from '@/components/tz/TextInputFieldInteger'
+import ModalPropostaComercialItem from './modalItem'
+import { formatCurrency } from '@/components/tz/formatters'
+import SelectMatriz from '@/components/select/SelectMatriz'
 
 const initialFormData: PropostaComercial = {
   id: 0,
@@ -82,6 +87,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
   const endpoint = '/propostaComercial'
   const endpointApi = '/proposta'
   const endpointApiItem = '/propostaitem'
+  const endpointApiTabelaPrecoItem = '/tabelaprecoitem'
   const router = useRouter()
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [formData, setFormData] = useState<Registro>(initialFormData)
@@ -153,7 +159,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
         const registro = await apiGeral.getResourceById(endpointApi, parseInt(params.id))
         setFormData(registro as unknown as Registro)
 
-        getRegistros({ filters: { proposta_comercial_id: params.id } })
+        getRegistros({ filters: { propostaComercialId: params.id } })
       }
     }
     if (params.id) {
@@ -190,7 +196,9 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
       // 🚫 BLOQUEIA PRIMEIRA CARGA
       if (firstLoadRef.current) {
         firstLoadRef.current = false
-        return
+        if (!formData.clienteFornecedorId) {
+          return
+        }
       }
 
       // 🟢 Cenário normal (mudou ID)
@@ -198,12 +206,31 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
 
       if (!deveAtualizar) return
 
+      const enderecoResponse = await apiGeral.getResource<EnderecoClienteFornecedor>('/endereco', {
+        filters: { clienteFornecedorId: formData.clienteFornecedorId },
+      })
+      const endereco = enderecoResponse.data?.[0]
+
+      // let cidade: any = null
+      // if (clienteFornecedor.enderecos_cidadeId) {
+      //   cidade = await apiGeral.getResourceById(
+      //     '/cidade',
+      //     Number(clienteFornecedor.enderecos_cidadeId)
+      //   )
+      // }
+
       setFormData((prev) => ({
         ...prev,
         clienteNome: nomeNovo,
         clienteDocumento: clienteFornecedor.cnpjCpf || '',
         clienteEmail: clienteFornecedor.email,
         clienteTelefone: clienteFornecedor.telefoneFixo || clienteFornecedor.telefoneCelular || '',
+        enderecoRua: endereco?.rua || '',
+        enderecoNumero: endereco?.numero || '',
+        enderecoBairro: endereco?.bairro || '',
+        enderecoCidade: endereco?.nomeCidade || '',
+        enderecoUf: endereco?.uf || '',
+        enderecoCep: endereco?.cep || '',
       }))
     }
 
@@ -221,17 +248,34 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
 
     try {
       let ret: { data?: { id: number }; success?: boolean; message?: string } = {}
+      const { valorTotal, ...payload } = formData
       if (params.id) {
-        ret = await apiGeral.updateResorce<Registro>(endpointApi, formData)
+        ret = await apiGeral.updateResorce<Registro>(endpointApi, payload)
       } else {
-        if (empresaIdSelecionada.length !== 1) {
-          setErrors({ api: 'Selecione apenas uma empresa para criar o registro nesta empresa!' })
-          return
-        }
-        formData.empresaId = empresaIdSelecionada[0]
-        ret = await apiGeral.createResource<Registro>(endpointApi, formData)
+        ret = await apiGeral.createResource<Registro>(endpointApi, {
+          ...payload,
+          empresaId: empresaIdSelecionada[0],
+        })
       }
-      console.log('ret', ret)
+
+      // Salvar os itens adicionados
+      for (const item of itensAdicionados) {
+        item.propostaComercialId = ret.data?.id || 0
+        await apiGeral.createResource<PropostaComercialItem>(endpointApiItem, item)
+      }
+
+      // Atualizar os itens modificados
+      for (const item of itensAtualizados) {
+        if (item.id) {
+          await apiGeral.updateResorce<PropostaComercialItem>(endpointApiItem, item)
+        }
+      }
+
+      // Excluir os itens removidos
+      for (const itemId of itensExcluidos) {
+        await apiGeral.deleteResorce(endpointApiItem, itemId.toString())
+      }
+
       if (!ret.success) {
         setErrors({ api: ret.message || 'Erro desconhecido' })
         return
@@ -262,20 +306,75 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     return newErrors
   }
 
-  const handleNovoItem = () => {
+  const getRegistrosTabelaPrecoItem = async (params: QueryParams) => {
+    const reg = await apiGeral.getResource<TabelaPrecoItem>(endpointApiTabelaPrecoItem, {
+      ...params,
+      pageSize: 200,
+    })
+    return reg.data || []
+  }
+
+  const handleNovoItem = async () => {
     setItem(null)
     setIndex(-1)
-    setModalItem(true)
+
+    const registros = await getRegistrosTabelaPrecoItem({
+      filters: { tabelaPrecoId: tabelaPrecoId },
+    })
+
+    let normaidTemp: number | undefined = undefined
+    let norma: Norma
+    const novosItens: PropostaComercialItem[] = await Promise.all(
+      registros.map(async (registro: TabelaPrecoItem) => {
+        if (registro.tabelaPreco_normaId != normaidTemp) {
+          norma = (await apiGeral.getResourceById<Norma>(
+            '/norma',
+            registro.tabelaPreco_normaId!
+          )) as Norma
+
+          normaidTemp = registro.tabelaPreco_normaId
+        }
+
+        return {
+          id: 0,
+          analiseId: registro.analiseId,
+          tabelaPrecoId: registro.tabelaPrecoId,
+          tabelaPrecoItemId: registro.id,
+          analiseNome: registro.analise_nome || '',
+          metodo: registro.analise_metodo,
+          unidade: registro.analise_unidade,
+          prazoDias: registro.prazoDias,
+          vpmMinimo: registro.vpmMinimo,
+          vpmMaximo: registro.vpmMaximo,
+          lqMinimo: registro.lqMinimo,
+          lqMaximo: registro.lqMaximo,
+          quantidade: quantidade || 0,
+          valorUnitario: registro.valor,
+          valorTotal: ((quantidade || 0) * (registro.valor as number)).toFixed(
+            2
+          ) as unknown as number,
+          normaId: registro.tabelaPreco_normaId,
+          norma_descricao: norma?.descricao || '',
+        }
+      })
+    )
+
+    console.log('novosItens', novosItens)
+
+    // adiciona na lista existente
+    setRegistros((prev) => [...(prev ?? []), ...novosItens])
+    setItensAdicionados((prev) => [...prev, ...novosItens])
   }
 
   const columnsItens = [
-    { key: 'id', _style: { width: '10%' }, label: 'Código' },
+    { key: 'analiseId', _style: { width: '10%' }, label: 'Código da Análise' },
     // {
     //   key: 'nivel',
     //   _style: { width: '8%' },
     //   label: 'Nível',
     // },
-    { key: 'analise_nome', _style: { width: '20%' }, label: 'Análise' },
+    { key: 'analiseNome', _style: { width: '20%' }, label: 'Análise' },
+    { key: 'norma_descricao', _style: { width: '20%' }, label: 'Norma' },
     { key: 'quantidade', _style: { width: '20%' }, label: 'Quantidade' },
     { key: 'valorUnitario', _style: { width: '20%' }, label: 'Valor Unitário' },
     { key: 'valorTotal', _style: { width: '20%' }, label: 'Valor Total' },
@@ -284,6 +383,22 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     // { key: 'order', _style: { width: '20%' }, label: 'order' },
     { key: 'show_details', label: 'Ação', _style: { width: '2%' }, filter: false, sorter: false },
   ]
+
+  const valorUnitario = (item: any, index: any) => {
+    return (
+      <td>
+        <CFormLabel>{formatCurrency(item.valorUnitario)}</CFormLabel>
+      </td>
+    )
+  }
+
+  const valorTotal = (item: any, index: any) => {
+    return (
+      <td>
+        <CFormLabel>{formatCurrency(item.valorTotal)}</CFormLabel>
+      </td>
+    )
+  }
 
   const show_details = (item: PropostaComercialItem, index: number) => {
     return (
@@ -316,22 +431,77 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     setItem(item)
     setIndex(index)
     setModalItem(true)
-
-    console.log('item', item)
-    console.log('index', index)
   }
 
-  const handleExcluirClick = async (id: number) => {
-    const index = (registros || []).findIndex((registro) => registro.id === id)
+  const handleExcluirClick = (id: number) => {
+    setRegistros((prev) => {
+      if (!prev) return prev
 
-    if (index !== -1) {
-      const [registroExcluido] = (registros || []).splice(index, 1) // Remove o registro do array
-      setItensExcluidos((prev) => [...prev, registroExcluido.id!])
-      setRegistros(registros || [])
-    } else {
-      console.log(`Registro com ID ${id} não encontrado.`)
+      const registroExcluido = prev.find((r) => r.id === id)
+
+      if (!registroExcluido) {
+        console.log(`Registro com ID ${id} não encontrado.`)
+        return prev
+      }
+
+      // adiciona na lista de excluídos
+      setItensExcluidos((old) => [...old, registroExcluido.id!])
+
+      // retorna novo array (SEM mutar)
+      return prev.filter((r) => r.id !== id)
+    })
+  }
+
+  const handleItemChange = <K extends keyof PropostaComercialItem>(
+    index: number,
+    field: K,
+    value: PropostaComercialItem[K]
+  ) => {
+    console.log(value)
+    const updatedItens = [...registros!]
+    updatedItens[index][field] = value
+    setRegistros(updatedItens)
+
+    const existingItem = registros![index]
+
+    // Checa se o item já foi atualizado e, se sim, adiciona na lista de itens atualizados
+    if (!itensAtualizados.some((item) => item.id === existingItem.id)) {
+      setItensAtualizados((prev) => [...prev, existingItem])
     }
   }
+
+  const handleAdicionarItem = (item: PropostaComercialItem) => {
+    console.log('chegou')
+    setRegistros([...(registros || []), item])
+    setItensAdicionados((prev) => [...prev, item])
+  }
+
+  useEffect(() => {
+    const parseValor = (valorTotal: any) => {
+      if (!valorTotal) return 0
+
+      console.log('valorTotal', valorTotal, typeof valorTotal)
+
+      // Se já for número
+      if (typeof valorTotal === 'number') return valorTotal
+
+      // Se for string tipo "5,30"
+      if (typeof valorTotal === 'string') {
+        return Number(valorTotal) || 0
+      }
+
+      return 0
+    }
+
+    const total = (registros || []).reduce((acc, item) => {
+      return acc + parseValor(item.valorTotal)
+    }, 0)
+
+    setFormData((prev) => ({
+      ...prev,
+      valorTotal: total,
+    }))
+  }, [registros])
 
   return (
     <PermissionGate permission={2}>
@@ -385,9 +555,9 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                 </CFormFloating>
               </CCol>
 
-              <CCol md={3}></CCol>
+              <CCol md={4}></CCol>
 
-              <CCol md={2}>
+              <CCol md={1}>
                 <TextInputField
                   name="status"
                   placeholder="Status"
@@ -452,17 +622,6 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                   <CFormLabel htmlFor="validade">Data de Validade</CFormLabel>
                   <CFormFeedback invalid>{errors.validade}</CFormFeedback>
                 </CFormFloating>
-              </CCol>
-
-              <CCol md={3}>
-                <TextInputField
-                  name="observacao"
-                  placeholder="Observação"
-                  value={formData.observacao ?? ''}
-                  onChange={handleChange}
-                  invalid={!!errors.observacao}
-                  feedbackMessage={errors.observacao}
-                />
               </CCol>
 
               <CCol md={4}>
@@ -592,6 +751,39 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                     </CRow>
                   </CCardBody>
                 </CCard>
+              </CCol>
+
+              <CCol md={3}>
+                <SelectMatriz
+                  id={formData.matrizId}
+                  setId={(matrizId) => handleChange(undefined, 'matrizId', matrizId)}
+                  laboratorioId={formData.laboratorioId}
+                  invalid={!!errors.matrizId}
+                  feedbackMessage={errors.matrizId}
+                  disabled={formData.laboratorioId === 0}
+                ></SelectMatriz>
+              </CCol>
+
+              <CCol md={3}>
+                <TextInputField
+                  name="especificacao"
+                  placeholder="Especificação"
+                  value={formData.especificacao ?? ''}
+                  onChange={handleChange}
+                  invalid={!!errors.especificacao}
+                  feedbackMessage={errors.especificacao}
+                />
+              </CCol>
+
+              <CCol md={6}>
+                <TextInputField
+                  name="observacao"
+                  placeholder="Observação"
+                  value={formData.observacao ?? ''}
+                  onChange={handleChange}
+                  invalid={!!errors.observacao}
+                  feedbackMessage={errors.observacao}
+                />
               </CCol>
 
               <CCol md={12}>
@@ -785,17 +977,42 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
               </CCol>
 
               <CCol md={2} style={{ marginTop: '10px' }}>
-                <CButtonAdd label="Adicionar Análise" onClick={() => handleNovoItem()} />
+                <CButtonAdd label="Adicionar Análise" onClick={async () => handleNovoItem()} />
               </CCol>
 
               <SmartTableWrapper
                 items={registros}
                 columns={columnsItens}
-                scopedColumns={{ show_details }}
+                scopedColumns={{ valorUnitario, valorTotal, show_details }}
                 filtroPorEmpresa={false}
                 columnFilter={false}
                 columnSorter={false}
               />
+
+              <CCol md={10}></CCol>
+
+              <CCol md={2}>
+                <TextInputField
+                  name="valorTotal"
+                  placeholder="Valor Total"
+                  value={formatCurrency(formData.valorTotal) ?? ''}
+                  // onChange={handleChange}
+                  invalid={!!errors.valorTotal}
+                  feedbackMessage={errors.valorTotal}
+                  disabled={true}
+                />
+              </CCol>
+
+              <ModalPropostaComercialItem
+                modal={modalItem}
+                setModal={setModalItem}
+                item={item || ({} as PropostaComercialItem)}
+                index={index}
+                propostaComercialId={params.id ? parseInt(params.id) : 0}
+                laboratorioId={formData.laboratorioId}
+                handleItemChange={handleItemChange}
+                handleAdicionarItem={handleAdicionarItem}
+              ></ModalPropostaComercialItem>
 
               {/* <CCol md={2}>
                 <SelectField

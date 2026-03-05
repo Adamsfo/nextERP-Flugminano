@@ -10,14 +10,13 @@ import {
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
-  CFormLabel,
   CRow,
   CTooltip,
 } from '@coreui/react-pro'
 import { apiGeral } from '@/lib/geral'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete, cilPencil } from '@coreui/icons'
+import { cilAlignCenter, cilDelete } from '@coreui/icons'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { QueryParams } from '@/types/geral'
@@ -25,14 +24,13 @@ import PermissionGate from '@/components/auth/PermissionGate'
 import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
-import { formatCurrency } from '@/components/tz/formatters'
 
 const Page = () => {
-  const endpoint = '/tabelapreco'
-  const endpointApi = '/tabelapreco'
-
+  const endpoint = '/matriz'
+  const endpointApi = '/matriz'
   const [search, setSearch] = useState('')
   const [atualizar, setAtualizar] = useState(false)
+  // const [empresaId, setempresaId] = useState<number[]>([])
   const router = useRouter()
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
@@ -41,48 +39,41 @@ const Page = () => {
 
   useEffect(() => {
     const filtro = searchParams.get('filter')
-    if (filtro) setSearch(filtro)
+    if (filtro) {
+      try {
+        setSearch(filtro)
+      } catch (error) {
+        console.error('Erro ao parsear o parâmetro:', error)
+      }
+    }
   }, [searchParams])
 
   const columns = [
-    { key: 'id', _style: { width: '10%' }, label: 'Código' },
-    { key: 'laboratorio_nome', label: 'Laboratório', _style: { minWidth: '200px' } },
-    { key: 'norma_descricao', label: 'Norma', _style: { minWidth: '200px' } },
-    { key: 'nome', _style: { minWidth: '200px' }, label: 'Nome' },
-    { key: 'valor', _style: { width: '15%' }, label: 'Valor' },
-    { key: 'ativa', _style: { width: '10%' }, label: 'Ativa' },
-    { key: 'show_details', label: 'Ação', _style: { width: '1%' }, filter: false, sorter: false },
+    { key: 'id', _style: { width: '15%' }, label: 'Código' },
+    // { key: 'tipo', _style: { minWidth: '200px' }, label: 'Tipo' },
+    { key: 'laboratorio_nome', _style: { minWidth: '100px' }, label: 'Laboratório' },
+    { key: 'descricao', _style: { minWidth: '100px' }, label: 'Matriz' },
+    { key: 'show_details', label: 'Ação', _style: { width: '2%' }, filter: false, sorter: false },
   ]
-
-  const valor = (item: any, index: any) => {
-    return (
-      <td>
-        <CFormLabel>{formatCurrency(item.valor)}</CFormLabel>
-      </td>
-    )
-  }
 
   const show_details = (item: any) => {
     return (
       <td className="py-2">
         <CDropdown variant="dropdown" style={{ position: 'unset' }}>
           <CDropdownToggle className="py-0" color="primary">
-            <CIcon icon={cilAlignCenter} size="lg" />
+            <CIcon icon={cilAlignCenter} size="lg" className="me" />
           </CDropdownToggle>
-
           <CDropdownMenu className="pt-0">
             <CDropdownHeader className="bg-light fw-semibold py-2">Menu</CDropdownHeader>
-
             <CDropdownItem onClick={() => handleEditClick(item.id)}>
-              <CTooltip content="Editar tabela de preço">
-                <CIcon icon={cilPencil} size="xl" className="me-2" />
+              <CTooltip content="Alterar Norma" placement="top">
+                <CIcon icon={cilAlignCenter} size="xl" style={{ marginRight: '6px' }} />
               </CTooltip>
               Alterar
             </CDropdownItem>
-
             <CDropdownItem onClick={() => handleExcluirClick(item.id)}>
-              <CTooltip content="Excluir tabela de preço">
-                <CIcon icon={cilDelete} size="xl" className="me-2" />
+              <CTooltip content="Excluir Norma" placement="top">
+                <CIcon icon={cilDelete} size="xl" style={{ marginRight: '6px' }} />
               </CTooltip>
               Excluir
             </CDropdownItem>
@@ -107,19 +98,16 @@ const Page = () => {
   const { handleExcluirClick, ConfirmModalComponent } = useDeleteWithConfirm(async (id: string) => {
     try {
       const ret = await apiGeral.deleteResorce(endpointApi, id)
-
+      console.log('ret', ret)
       if (!ret.success) {
-        setMsg('Erro ao excluir: ' + ret.message)
-        setModalMsg(true)
+        setMsg('Erro ao excluir registro:' + ret.message)
         return
       }
-
       setMsg('Registro excluído com sucesso.')
       setModalMsg(true)
       router.refresh()
     } catch (error) {
-      setMsg('Erro ao excluir: ' + error)
-      setModalMsg(true)
+      setMsg('Erro ao excluir registro:' + error)
     }
   })
 
@@ -129,13 +117,11 @@ const Page = () => {
         <CCol xs={12}>
           <CCard className="mb-4">
             <CCardHeader>
-              <strong>Tabela de Preço</strong>
+              <strong>Matriz</strong>
             </CCardHeader>
-
             <CCardBody>
               <CRow className="g-3">
-                <CCol md={6}></CCol>
-
+                <CCol md={6}>{/* <SelectEmpresa id={empresaId} setId={setempresaId} /> */}</CCol>
                 <CCol md={6} className="d-flex align-items-center justify-content-end">
                   <FilterTableWrapper
                     search={search}
@@ -146,18 +132,17 @@ const Page = () => {
                   />
                 </CCol>
               </CRow>
-
               <SmartTableWrapper
                 fetchFunction={getRegistros}
                 columns={columns}
-                scopedColumns={{ valor, show_details }}
+                scopedColumns={{ show_details }}
                 search={search}
-                atualizar={atualizar}
                 filtroPorEmpresa={false}
+                // empresaId={empresaId}
+                atualizar={atualizar}
               />
             </CCardBody>
-
-            <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg} />
+            <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>
             {ConfirmModalComponent}
           </CCard>
         </CCol>

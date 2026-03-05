@@ -42,16 +42,16 @@ const _nav = [
     },
     href: '/',
   },
-  {
-    component: CNavItem,
-    name: 'Torneio',
-    // icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
-    badge: {
-      color: 'info-gradient',
-    },
-    href: '/torneio',
-  },
+  // {
+  //   component: CNavItem,
+  //   name: 'Torneio',
+  //   // icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+  //   icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+  //   badge: {
+  //     color: 'info-gradient',
+  //   },
+  //   href: '/torneio',
+  // },
   {
     component: CNavItem,
     name: 'Proposta Comercial',
@@ -98,16 +98,16 @@ const _nav = [
       //   },
       //   href: '/estrutura',
       // },
-      {
-        component: CNavItem,
-        name: 'Blind',
-        icon: <CIcon icon={cilExcerpt} customClassName="nav-icon" />,
-        badge: {
-          color: 'info-gradient',
-          // text: 'NEW',
-        },
-        href: '/blind',
-      },
+      // {
+      //   component: CNavItem,
+      //   name: 'Blind',
+      //   icon: <CIcon icon={cilExcerpt} customClassName="nav-icon" />,
+      //   badge: {
+      //     color: 'info-gradient',
+      //     // text: 'NEW',
+      //   },
+      //   href: '/blind',
+      // },
       // {
       //   component: CNavItem,
       //   name: 'Fornecedor',
@@ -137,6 +137,26 @@ const _nav = [
           // text: 'NEW',
         },
         href: '/analise',
+      },
+      {
+        component: CNavItem,
+        name: 'Norma',
+        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        badge: {
+          color: 'info-gradient',
+          // text: 'NEW',
+        },
+        href: '/norma',
+      },
+      {
+        component: CNavItem,
+        name: 'Matriz',
+        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        badge: {
+          color: 'info-gradient',
+          // text: 'NEW',
+        },
+        href: '/matriz',
       },
       {
         component: CNavItem,

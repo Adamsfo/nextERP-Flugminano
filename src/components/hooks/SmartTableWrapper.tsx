@@ -9,8 +9,10 @@ import CIcon from '@coreui/icons-react'
 import { cilAlignCenter, cilPlus } from '@coreui/icons'
 import { useTypedSelector } from '../../store'
 
-interface SmartTableWrapperProps
-  extends Omit<CSmartTableProps, 'columns' | 'items' | 'loading' | 'paginationProps'> {
+interface SmartTableWrapperProps extends Omit<
+  CSmartTableProps,
+  'columns' | 'items' | 'loading' | 'paginationProps'
+> {
   fetchFunction?: (params: Record<string, any>) => Promise<any> // Ajuste no tipo da função de busca
   columns: CSmartTableProps['columns']
   search?: string
@@ -43,6 +45,8 @@ const SmartTableWrapper: React.FC<SmartTableWrapperProps> = ({
     handleColumnFilterChange,
   } = useFilters()
 
+  const isExternalItems = !!items
+
   const empresaIdSelecionada = useTypedSelector((state) => state.empresaId)
 
   const { loading, registros, meta, refreshTable } = useSmartTable({
@@ -51,21 +55,21 @@ const SmartTableWrapper: React.FC<SmartTableWrapperProps> = ({
     columnFilter,
     columnSorter,
     search, // Adiciona o parâmetro de busca
-    fetchFunction: items ? undefined : fetchFunction,
+    fetchFunction: isExternalItems ? undefined : fetchFunction,
     empresaId: empresaIdSelecionada,
     filtroFixo,
     filtroPorEmpresa,
     atualizar,
   })
 
-  const [externalItems, setExternalItems] = useState<any[]>([])
+  // const [externalItems, setExternalItems] = useState<any[]>([])
 
-  // Atualizar o estado quando os `items` externos mudarem
-  useEffect(() => {
-    if (items) {
-      setExternalItems(items)
-    }
-  }, [items])
+  // // Atualizar o estado quando os `items` externos mudarem
+  // useEffect(() => {
+  //   if (items) {
+  //     setExternalItems(items)
+  //   }
+  // }, [items])
 
   const columnSettings = useMemo(() => columns, [columns])
 
@@ -86,15 +90,19 @@ const SmartTableWrapper: React.FC<SmartTableWrapperProps> = ({
         columns={columnSettings}
         columnFilter={{ external: true }}
         columnSorter={{ external: true }}
-        loading={loading && !items}
-        items={items || registros}
-        itemsPerPageSelect
-        itemsPerPage={itemsPerPage}
-        pagination={{ external: true }}
-        paginationProps={{
-          activePage: activePage,
-          pages: meta.totalPages,
-        }}
+        loading={loading && !isExternalItems}
+        items={isExternalItems ? items : registros}
+        itemsPerPageSelect={!isExternalItems}
+        itemsPerPage={isExternalItems ? items?.length : itemsPerPage}
+        pagination={isExternalItems ? false : { external: true }}
+        paginationProps={
+          isExternalItems
+            ? undefined
+            : {
+                activePage: activePage,
+                pages: meta.totalPages,
+              }
+        }
         tableProps={{
           className: 'add-this-class',
           responsive: true,

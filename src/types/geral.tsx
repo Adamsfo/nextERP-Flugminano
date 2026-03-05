@@ -263,9 +263,11 @@ export interface Analise {
 export interface TabelaPreco {
   id: number
   laboratorioId: number
+  normaId: number
   nome: string
   valor: number
   ativa: 'Sim' | 'Não'
+  norma_descricao?: string
 }
 
 export interface TabelaPrecoItem {
@@ -278,6 +280,10 @@ export interface TabelaPrecoItem {
   lqMinimo?: number
   lqMaximo?: number
   valor: number
+  analise_nome?: string
+  analise_metodo?: string
+  analise_unidade?: string
+  tabelaPreco_normaId?: number
 }
 
 export interface PropostaComercial {
@@ -285,6 +291,8 @@ export interface PropostaComercial {
   empresaId: number
   clienteFornecedorId: number
   laboratorioId: number
+  matrizId?: number
+  especificacao?: string
 
   numero: string
   data: Date
@@ -314,8 +322,11 @@ export interface PropostaComercial {
 
 export interface PropostaComercialItem {
   id: number
-  propostaComercialId: number
+  propostaComercialId?: number
   analiseId: number
+  tabelaPrecoId?: number
+  tabelaPrecoItemId?: number
+  normaId?: number
 
   // Snapshot análise
   analiseNome: string
@@ -332,4 +343,15 @@ export interface PropostaComercialItem {
   quantidade: number
   valorUnitario: number
   valorTotal: number
+}
+
+export interface Norma {
+  id: number
+  descricao: string
+}
+
+export interface Matriz {
+  id: number
+  laboratorioId: number
+  descricao: string
 }

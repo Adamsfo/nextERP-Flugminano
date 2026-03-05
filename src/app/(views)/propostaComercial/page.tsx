@@ -10,6 +10,7 @@ import {
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
+  CFormLabel,
   CRow,
   CTooltip,
 } from '@coreui/react-pro'
@@ -24,6 +25,8 @@ import PermissionGate from '@/components/auth/PermissionGate'
 import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
+import { formatCurrency } from '@/components/tz/formatters'
+import { getStatusPropostaStyle } from '@/components/tz/StatusPropostaStyle'
 
 const Page = () => {
   const endpoint = '/propostaComercial'
@@ -49,14 +52,48 @@ const Page = () => {
   }, [searchParams])
 
   const columns = [
-    { key: 'id', _style: { width: '15%' }, label: 'Código' },
-    { key: 'laboratorio_nome', _style: { width: '15%' }, label: 'Laboratório' },
-    { key: 'numero', _style: { width: '15%' }, label: 'Número da Proposta' },
+    { key: 'id', _style: { width: '6%' }, label: 'Código' },
+    { key: 'laboratorio_nome', label: 'Laboratório' },
+    { key: 'numero', label: 'Número' },
+    { key: 'createdAt', label: 'Data' },
     { key: 'clienteNome', _style: { minWidth: '100px' }, label: 'Nome' },
     { key: 'clienteDocumento', _style: { minWidth: '100px' }, label: 'Documento' },
     { key: 'clienteEmail', _style: { minWidth: '100px' }, label: 'Email' },
+    { key: 'valorTotal', label: 'Valor Total' },
+    { key: 'status', label: 'Status' },
     { key: 'show_details', label: 'Ação', _style: { width: '2%' }, filter: false, sorter: false },
   ]
+
+  const valorTotal = (item: any) => {
+    return <td style={{ textAlign: 'right' }}>{formatCurrency(item.valorTotal)}</td>
+  }
+
+  const createdAt = (item: any) => {
+    const date = new Date(item.createdAt)
+    return <td>{date.toLocaleDateString()}</td>
+  }
+
+  const status = (item: any) => {
+    const statusStyle = getStatusPropostaStyle(item.status)
+
+    return (
+      <td style={{ textAlign: 'center' }}>
+        <span
+          style={{
+            color: statusStyle.color,
+            backgroundColor: statusStyle.background,
+            fontWeight: 'bold',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            display: 'inline-block',
+            fontSize: '12px',
+          }}
+        >
+          {item.status}
+        </span>
+      </td>
+    )
+  }
 
   const show_details = (item: any) => {
     return (
@@ -137,7 +174,7 @@ const Page = () => {
               <SmartTableWrapper
                 fetchFunction={getRegistros}
                 columns={columns}
-                scopedColumns={{ show_details }}
+                scopedColumns={{ status, createdAt, valorTotal, show_details }}
                 search={search}
                 // empresaId={empresaId}
                 // filtroFixo={{ tipo: 'Cliente' }}

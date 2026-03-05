@@ -13,6 +13,7 @@ import {
   CDropdownMenu,
   CDropdownToggle,
   CForm,
+  CFormLabel,
   CRow,
   CTooltip,
 } from '@coreui/react-pro'
@@ -33,10 +34,12 @@ import CIcon from '@coreui/icons-react'
 import { cilAlignCenter, cilDelete, cilPencil } from '@coreui/icons'
 import CButtonAdd from '@/components/tz/CButtonAdd'
 import ModalTabelaPrecoItem from './modalItem'
+import SelectNorma from '@/components/select/SelectNorma'
 
 const initialFormData: TabelaPreco = {
   id: 0,
   laboratorioId: 0,
+  normaId: 0,
   nome: '',
   valor: 0,
   ativa: 'Sim',
@@ -97,7 +100,7 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
         const registro = await apiGeral.getResourceById(endpointApi, parseInt(params.id))
         setFormData(registro as Registro)
 
-        getRegistros({ filters: { tabela_preco_id: params.id } })
+        getRegistros({ filters: { tabelaPrecoId: params.id } })
       }
     }
     if (params.id) fetchData()
@@ -108,6 +111,7 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
 
     if (!formData.nome) newErrors.nome = 'Nome é obrigatório'
     if (!formData.laboratorioId) newErrors.laboratorioId = 'Laboratório é obrigatório'
+    // if (!formData.normaId) newErrors.normaId = 'Norma é obrigatória'
 
     return newErrors
   }
@@ -131,8 +135,14 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
 
       // Salvar os itens adicionados
       for (const item of itensAdicionados) {
-        item.tabelaPrecoId = ret.data?.id || 0
-        await apiGeral.createResource<TabelaPrecoItem>(endpointApiItem, item)
+        if (!item.tabelaPrecoId || Number(item.tabelaPrecoId) === 0) {
+          item.tabelaPrecoId = ret.data?.id || 0
+        }
+        // remove o id sem usar delete
+        const { id, ...payload } = item
+        await apiGeral.createResource<TabelaPrecoItem>(endpointApiItem, {
+          ...payload,
+        })
       }
 
       // Atualizar os itens modificados
@@ -198,20 +208,15 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
   }
 
   const handleAdicionarItem = (item: TabelaPrecoItem) => {
-    console.log('chegou')
+    console.log('Adicionando item:', item)
     setRegistros([...(registros || []), item])
     setItensAdicionados((prev) => [...prev, item])
   }
-
-  const handleNovo = () => {}
 
   const handleAlterar = (item: TabelaPrecoItem, index: number) => {
     setItem(item)
     setIndex(index)
     setModalItem(true)
-
-    console.log('item', item)
-    console.log('index', index)
   }
 
   const show_details = (item: TabelaPrecoItem, index: number) => {
@@ -229,7 +234,7 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
               </CTooltip>
               Alterar
             </CDropdownItem>
-            <CDropdownItem onClick={() => handleExcluirClick(item.id)}>
+            <CDropdownItem onClick={() => handleExcluirClick(item.id || 0)}>
               <CTooltip content="Excluir item da tabela de preço" placement="top">
                 <CIcon icon={cilDelete} size="xl" style={{ marginRight: '6px' }} />
               </CTooltip>
@@ -254,15 +259,49 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
     { key: 'vpmMaximo', _style: { width: '20%' }, label: 'Vpm Máximo' },
     { key: 'lqMinimo', _style: { width: '20%' }, label: 'LQ Mínimo' },
     { key: 'lqMaximo', _style: { width: '20%' }, label: 'LQ Máximo' },
+    { key: 'valor', _style: { width: '20%' }, label: 'Valor' },
     // { key: 'order', _style: { width: '20%' }, label: 'order' },
     { key: 'show_details', label: 'Ação', _style: { width: '2%' }, filter: false, sorter: false },
   ]
+
+  const valor = (item: any, index: any) => {
+    return (
+      <td>
+        <CFormLabel>{formatCurrency(item.valor)}</CFormLabel>
+      </td>
+    )
+  }
 
   const handleNovoItem = () => {
     setItem(null)
     setIndex(-1)
     setModalItem(true)
   }
+
+  useEffect(() => {
+    const parseValor = (valor: any) => {
+      if (!valor) return 0
+
+      // Se já for número
+      if (typeof valor === 'number') return valor
+
+      // Se for string tipo "5,30"
+      if (typeof valor === 'string') {
+        return Number(valor.replace(/\./g, '').replace(',', '.')) || 0
+      }
+
+      return 0
+    }
+
+    const total = (registros || []).reduce((acc, item) => {
+      return acc + parseValor(item.valor)
+    }, 0)
+
+    setFormData((prev) => ({
+      ...prev,
+      valor: total,
+    }))
+  }, [registros])
 
   return (
     <PermissionGate permission={2}>
@@ -294,7 +333,7 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
                 ></SelectLaboratorio>
               </CCol>
 
-              <CCol md={6}>
+              <CCol md={3}>
                 <TextInputField
                   name="nome"
                   placeholder="Nome da Tabela"
@@ -303,6 +342,14 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
                   invalid={!!errors.nome}
                   feedbackMessage={errors.nome}
                 />
+              </CCol>
+
+              <CCol md={3}>
+                <SelectNorma
+                  id={formData.normaId}
+                  setId={(value) => setFormData((prev) => ({ ...prev, normaId: value }))}
+                  setDescricao={undefined}
+                ></SelectNorma>
               </CCol>
 
               <CCol md={3}>
@@ -336,7 +383,7 @@ export default function TabelaPrecoForm({ params }: { params: FormPropsEdit }) {
               <SmartTableWrapper
                 items={registros}
                 columns={columnsItens}
-                scopedColumns={{ show_details }}
+                scopedColumns={{ valor, show_details }}
                 filtroPorEmpresa={false}
                 columnFilter={false}
                 columnSorter={false}

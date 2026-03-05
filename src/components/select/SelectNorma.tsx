@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { CFormFeedback, CFormLabel, CMultiSelect } from '@coreui/react-pro'
 import { apiGeral } from '@/lib/geral'
-import { Analise, TabelaPreco, TorneioItem } from '@/types/geral'
+import { Analise, Norma, TorneioItem } from '@/types/geral'
 
 interface CustomMultiSelectProps {
   id: number | null | undefined // Permitir múltiplos IDs
@@ -18,7 +18,7 @@ interface CustomMultiSelectProps {
 
 let timer: NodeJS.Timeout
 
-const SelectTabelaPreco: React.FC<CustomMultiSelectProps> = ({
+const SelectNorma: React.FC<CustomMultiSelectProps> = ({
   id,
   setId,
   setDescricao,
@@ -40,14 +40,14 @@ const SelectTabelaPreco: React.FC<CustomMultiSelectProps> = ({
       if (lastPesquisa === search) return
       timer = setTimeout(async () => {
         setLoading(true)
-        const response = await apiGeral.getResource<TabelaPreco>('/tabelapreco', {
+        const response = await apiGeral.getResource<Norma>('/norma', {
           search,
           filters: { laboratorioId },
           pageSize: 15,
         })
-        const registrosData = (response.data ?? []).map((record: TabelaPreco) => ({
+        const registrosData = (response.data ?? []).map((record: Norma) => ({
           value: record.id,
-          label: record.nome + (record.norma_descricao ? ` - ${record.norma_descricao}` : ''),
+          label: record.descricao,
         }))
 
         setRegistros(registrosData.map((item) => ({ ...item, selected: false })))
@@ -112,15 +112,15 @@ const SelectTabelaPreco: React.FC<CustomMultiSelectProps> = ({
           }}
           htmlFor="validationText"
         >
-          Análise da tabela de preço
+          Norma
         </CFormLabel>
       </div>
       <CMultiSelect
         loading={loading}
         onFilterChange={(value) => getRegistros(value)}
         options={registros}
-        name="tabelaPrecoId"
-        placeholder="Selecione uma análise da tabela de preço"
+        name="analiseId"
+        placeholder="Selecione uma Análise"
         search="external"
         virtualScroller
         multiple={false}
@@ -139,4 +139,4 @@ const SelectTabelaPreco: React.FC<CustomMultiSelectProps> = ({
   )
 }
 
-export default SelectTabelaPreco
+export default SelectNorma

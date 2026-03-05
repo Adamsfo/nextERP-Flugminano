@@ -206,7 +206,7 @@ export default function TabelaPrecoItemForm({
                 />
               </CCol>
 
-              <CCol md={8}>
+              <CCol md={6}>
                 <SelectAnalise
                   id={formData.analiseId}
                   setId={(analiseId) => handleChange(undefined, 'analiseId', analiseId)}
@@ -218,6 +218,17 @@ export default function TabelaPrecoItemForm({
                   feedbackMessage={errors.analiseId}
                   disabled={formData.id !== 0}
                 ></SelectAnalise>
+              </CCol>
+
+              <CCol md={2}>
+                <TextInputFieldReais
+                  name="valor"
+                  placeholder="Valor"
+                  value={formData.valor?.toString() || ''} // Mantém o valor decimal
+                  onChange={(name, rawValue) => handleChange(undefined, name, rawValue)}
+                  invalid={!!errors.valor}
+                  feedbackMessage={errors.valor}
+                />
               </CCol>
 
               <CCol md={2}>
@@ -261,17 +272,6 @@ export default function TabelaPrecoItemForm({
                   onChange={(name, rawValue) => handleChange(undefined, name, rawValue)}
                   invalid={!!errors.lqMaximo}
                   feedbackMessage={errors.lqMaximo}
-                />
-              </CCol>
-
-              <CCol md={3}>
-                <TextInputFieldReais
-                  name="valor"
-                  placeholder="Valor"
-                  value={formData.valor?.toString() || ''} // Mantém o valor decimal
-                  onChange={(name, rawValue) => handleChange(undefined, name, rawValue)}
-                  invalid={!!errors.valor}
-                  feedbackMessage={errors.valor}
                 />
               </CCol>
             </CRow>
