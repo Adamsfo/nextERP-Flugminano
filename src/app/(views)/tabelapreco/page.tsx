@@ -70,7 +70,7 @@ const Page = () => {
             <CIcon icon={cilAlignCenter} size="lg" />
           </CDropdownToggle>
 
-          <CDropdownMenu className="pt-0">
+          <CDropdownMenu className="pt-0" style={{ cursor: 'pointer' }}>
             <CDropdownHeader className="bg-light fw-semibold py-2">Menu</CDropdownHeader>
 
             <CDropdownItem onClick={() => handleEditClick(item.id)}>

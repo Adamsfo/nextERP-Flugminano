@@ -17,7 +17,7 @@ import {
 import { apiGeral } from '@/lib/geral'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete } from '@coreui/icons'
+import { cilAlignCenter, cilDelete, cilPrint } from '@coreui/icons'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { QueryParams } from '@/types/geral'
@@ -102,17 +102,35 @@ const Page = () => {
           <CDropdownToggle className="py-0" color="primary">
             <CIcon icon={cilAlignCenter} size="lg" className="me" />
           </CDropdownToggle>
-          <CDropdownMenu className="pt-0">
+          <CDropdownMenu className="pt-0" style={{ cursor: 'pointer' }}>
             <CDropdownHeader className="bg-light fw-semibold py-2">Menu</CDropdownHeader>
+            <CDropdownItem onClick={() => handleImprimirClick(item.id)}>
+              <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
+                <CIcon
+                  icon={cilPrint}
+                  size="xl"
+                  style={{ marginRight: '6px', cursor: 'pointer' }}
+                />
+              </CTooltip>
+              Imprimir
+            </CDropdownItem>
             <CDropdownItem onClick={() => handleEditClick(item.id)}>
               <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
-                <CIcon icon={cilAlignCenter} size="xl" style={{ marginRight: '6px' }} />
+                <CIcon
+                  icon={cilAlignCenter}
+                  size="xl"
+                  style={{ marginRight: '6px', cursor: 'pointer' }}
+                />
               </CTooltip>
               Alterar
             </CDropdownItem>
             <CDropdownItem onClick={() => handleExcluirClick(item.id)}>
               <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
-                <CIcon icon={cilDelete} size="xl" style={{ marginRight: '6px' }} />
+                <CIcon
+                  icon={cilDelete}
+                  size="xl"
+                  style={{ marginRight: '6px', cursor: 'pointer' }}
+                />
               </CTooltip>
               Excluir
             </CDropdownItem>
@@ -133,6 +151,8 @@ const Page = () => {
   const handleEditClick = (id: string) => {
     router.push(`${endpoint}/${id}`)
   }
+
+  const handleImprimirClick = (id: string) => {}
 
   const { handleExcluirClick, ConfirmModalComponent } = useDeleteWithConfirm(async (id: string) => {
     try {
