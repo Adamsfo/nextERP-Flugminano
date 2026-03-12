@@ -38,10 +38,12 @@ class Api {
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     body?: any,
-    params?: QueryParams
+    params?: QueryParams,
+    responseType: 'json' | 'blob' = 'json'
   ): Promise<ApiResponse<T>> {
     try {
       const queryString = this.buildQueryString(params || {})
+
       const response = await fetch(`${this.baseUrl}${endpoint}${queryString}`, {
         method,
         headers: {
@@ -50,13 +52,13 @@ class Api {
         },
         body: body && method !== 'GET' ? JSON.stringify(body) : null,
       })
+
       let data: any
 
-      // Verifique se a resposta tem conteúdo antes de tentar fazer parse
-      if (response.headers.get('Content-Type')?.includes('application/json')) {
-        data = await response.json()
+      if (responseType === 'blob') {
+        data = await response.blob()
       } else {
-        data = {}
+        data = await response.json()
       }
 
       if (response.status === 403) {
@@ -64,23 +66,29 @@ class Api {
         return { success: false, message: 'Token inválido!' }
       }
 
+      if (responseType === 'blob') {
+        return { success: true, data }
+      }
+
       if (data.status === 'fail') {
         return { success: false, message: data.message }
       }
 
       if (method === 'GET') {
-        return { success: true, data: data.data, meta: data.meta }
+        return { success: true, data: data.data, meta: data.meta, headers: response.headers }
       }
 
       if (endpoint === '/login') {
         return { success: true, data: data.data, meta: data.meta }
       }
 
-      return { success: true, data: data }
+      return { success: true, data }
     } catch (error: any) {
       return { success: false, message: error.message }
     }
   }
 }
+
+export const API_BASE_URL = BASEAPI[0]
 
 export const api = new Api(BASEAPI[0]) // Use o ambiente correto conforme necessário

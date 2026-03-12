@@ -9,7 +9,7 @@ export interface ApiResponse<T = any> {
   data?: T
   meta?: T
   message?: string
-  // error?: string;
+  headers?: Headers
 }
 
 export interface Login {
@@ -250,6 +250,8 @@ export interface Laboratorio {
   responsavelTecnico?: string
   registroCRQ?: string
   ativo: 'Sim' | 'Não'
+  nomeTemplateProposta?: string
+  fileTemplateProposta?: string
 }
 
 export interface Analise {
@@ -303,6 +305,7 @@ export interface PropostaComercial {
   clienteDocumento: string
   clienteEmail?: string
   clienteTelefone?: string
+  clienteContato?: string
 
   // Snapshot endereço
   enderecoRua?: string

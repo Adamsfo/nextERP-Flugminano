@@ -83,6 +83,16 @@ class ApiGeral {
   public async pararTorneio<T>(id: string): Promise<ApiResponse> {
     return await api.request<T>('/torneio/parar', 'POST')
   }
+
+  public async imprimir(endpoint: string, id: number, formato = 'pdf') {
+    return await api.request(
+      `${endpoint}/${id}/imprimir?to=${formato}`,
+      'GET',
+      null,
+      undefined,
+      'blob'
+    )
+  }
 }
 
 export const apiGeral = new ApiGeral()

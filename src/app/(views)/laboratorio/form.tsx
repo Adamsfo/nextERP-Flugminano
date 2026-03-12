@@ -10,17 +10,10 @@ import SelectField from '@/components/tz/SelectField'
 import CButtonSave from '@/components/tz/CButtonSave'
 import CButtonBack from '@/components/tz/CButtonBack'
 import ModalMsg from '@/components/modal/ModalMsg'
-import { FormPropsEdit } from '@/types/geral'
+import { FormPropsEdit, Laboratorio } from '@/types/geral'
+import FileUpload from './upload'
 
-interface LaboratorioAttributes {
-  id: number
-  nome: string
-  responsavelTecnico?: string
-  registroCRQ?: string
-  ativo: 'Sim' | 'Não'
-}
-
-const initialFormData: LaboratorioAttributes = {
+const initialFormData: Laboratorio = {
   id: 0,
   nome: '',
   responsavelTecnico: '',
@@ -33,7 +26,7 @@ export default function LaboratorioForm({ params }: { params: FormPropsEdit }) {
   const endpointApi = '/laboratorio'
   const router = useRouter()
 
-  const [formData, setFormData] = useState<LaboratorioAttributes>(initialFormData)
+  const [formData, setFormData] = useState<Laboratorio>(initialFormData)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
@@ -55,7 +48,7 @@ export default function LaboratorioForm({ params }: { params: FormPropsEdit }) {
     async function fetchData() {
       if (params.id) {
         const registro = await apiGeral.getResourceById(endpointApi, Number(params.id))
-        setFormData(registro as LaboratorioAttributes)
+        setFormData(registro as Laboratorio)
       }
     }
     fetchData()
@@ -79,10 +72,14 @@ export default function LaboratorioForm({ params }: { params: FormPropsEdit }) {
 
     try {
       let ret
+
+      delete formData.nomeTemplateProposta
+      delete formData.fileTemplateProposta
+
       if (params.id) {
-        ret = await apiGeral.updateResorce<LaboratorioAttributes>(endpointApi, formData)
+        ret = await apiGeral.updateResorce<Laboratorio>(endpointApi, formData)
       } else {
-        ret = await apiGeral.createResource<LaboratorioAttributes>(endpointApi, formData)
+        ret = await apiGeral.createResource<Laboratorio>(endpointApi, formData)
       }
 
       if (!ret.success) {
@@ -166,6 +163,8 @@ export default function LaboratorioForm({ params }: { params: FormPropsEdit }) {
                   ]}
                 />
               </CCol>
+
+              <FileUpload laboratorio={formData} />
             </CRow>
 
             {errors.api && <div className="text-danger mt-2">{errors.api}</div>}

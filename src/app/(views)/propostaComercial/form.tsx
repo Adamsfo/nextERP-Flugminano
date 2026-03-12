@@ -222,6 +222,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
       setFormData((prev) => ({
         ...prev,
         clienteNome: nomeNovo,
+        clienteContato: clienteFornecedor.contato || '',
         clienteDocumento: clienteFornecedor.cnpjCpf || '',
         clienteEmail: clienteFornecedor.email,
         clienteTelefone: clienteFornecedor.telefoneFixo || clienteFornecedor.telefoneCelular || '',
@@ -622,6 +623,18 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                   <CFormLabel htmlFor="validade">Data de Validade</CFormLabel>
                   <CFormFeedback invalid>{errors.validade}</CFormFeedback>
                 </CFormFloating>
+              </CCol>
+
+              <CCol md={3}>
+                <TextInputField
+                  name="clienteContato"
+                  placeholder="Contato"
+                  value={formData.clienteContato ?? ''}
+                  // onChange={handleChange}
+                  invalid={!!errors.clienteContato}
+                  feedbackMessage={errors.clienteContato}
+                  disabled={true}
+                />
               </CCol>
 
               <CCol md={4}>

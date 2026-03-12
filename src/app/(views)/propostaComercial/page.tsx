@@ -27,6 +27,7 @@ import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
 import { formatCurrency } from '@/components/tz/formatters'
 import { getStatusPropostaStyle } from '@/components/tz/StatusPropostaStyle'
+import { API_BASE_URL } from '@/lib/api'
 
 const Page = () => {
   const endpoint = '/propostaComercial'
@@ -152,7 +153,12 @@ const Page = () => {
     router.push(`${endpoint}/${id}`)
   }
 
-  const handleImprimirClick = (id: string) => {}
+  const handleImprimirClick = async (id: number) => {
+    window.open(
+      `${API_BASE_URL}/proposta/${id}/imprimir?token=${localStorage.getItem('token')}`,
+      '_blank'
+    )
+  }
 
   const { handleExcluirClick, ConfirmModalComponent } = useDeleteWithConfirm(async (id: string) => {
     try {
