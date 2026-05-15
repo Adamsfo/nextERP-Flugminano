@@ -20,7 +20,7 @@ import CIcon from '@coreui/icons-react'
 import { cilAlignCenter, cilDelete, cilPrint } from '@coreui/icons'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { QueryParams } from '@/types/geral'
+import { PropostaComercial, QueryParams } from '@/types/geral'
 import PermissionGate from '@/components/auth/PermissionGate'
 import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
@@ -28,6 +28,7 @@ import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
 import { formatCurrency } from '@/components/tz/formatters'
 import { getStatusPropostaStyle } from '@/components/tz/StatusPropostaStyle'
 import { API_BASE_URL } from '@/lib/api'
+import ModalStatusPropComercial from './ModalStatusPropComercial'
 
 const Page = () => {
   const endpoint = '/propostaComercial'
@@ -38,6 +39,8 @@ const Page = () => {
   const router = useRouter()
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
+  const [registro, setRegistro] = useState<PropostaComercial | null>(null)
+  const [modalStatus, setModalStatus] = useState(false)
 
   const searchParams = useSearchParams()
 
@@ -74,11 +77,16 @@ const Page = () => {
     return <td>{date.toLocaleDateString()}</td>
   }
 
+  const handleStatusClick = (registro: PropostaComercial) => {
+    setRegistro(registro)
+    setModalStatus(true)
+  }
+
   const status = (item: any) => {
     const statusStyle = getStatusPropostaStyle(item.status)
 
     return (
-      <td style={{ textAlign: 'center' }}>
+      <td style={{ textAlign: 'center', cursor: 'pointer' }}>
         <span
           style={{
             color: statusStyle.color,
@@ -89,6 +97,7 @@ const Page = () => {
             display: 'inline-block',
             fontSize: '12px',
           }}
+          onClick={() => handleStatusClick(item)}
         >
           {item.status}
         </span>
@@ -208,6 +217,14 @@ const Page = () => {
               />
             </CCardBody>
             <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>
+            {registro && (
+              <ModalStatusPropComercial
+                visible={modalStatus}
+                setVisible={setModalStatus}
+                registro={registro as PropostaComercial}
+                setAtualizar={setAtualizar}
+              />
+            )}
             {ConfirmModalComponent}
           </CCard>
         </CCol>
