@@ -10,40 +10,31 @@ import {
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
-  CFormLabel,
   CRow,
   CTooltip,
 } from '@coreui/react-pro'
 import { apiGeral } from '@/lib/geral'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete, cilPlus, cilPrint } from '@coreui/icons'
+import { cilAlignCenter, cilDelete } from '@coreui/icons'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { PropostaComercial, QueryParams } from '@/types/geral'
+import { QueryParams } from '@/types/geral'
 import PermissionGate from '@/components/auth/PermissionGate'
 import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
 import { formatCurrency } from '@/components/tz/formatters'
-import { getStatusPropostaStyle } from '@/components/tz/StatusPropostaStyle'
-import { API_BASE_URL } from '@/lib/api'
-import ModalStatusPropComercial from './ModalStatusPropComercial'
-import ModalGerarProtocolo from './ModalGerarProtocolo'
+import { getStatusProtocoloStyle } from '@/components/tz/StatusProtocoloStyle'
 
 const Page = () => {
-  const endpoint = '/propostaComercial'
-  const endpointApi = '/proposta'
+  const endpoint = '/protocolo'
+  const endpointApi = '/protocolo'
   const [search, setSearch] = useState('')
   const [atualizar, setAtualizar] = useState(false)
-  // const [empresaId, setempresaId] = useState<number[]>([])
   const router = useRouter()
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
-  const [registro, setRegistro] = useState<PropostaComercial | null>(null)
-  const [modalStatus, setModalStatus] = useState(false)
-  const [modalGerarProtocolo, setModalGerarProtocolo] = useState(false)
-  const [propostaGerarProtocoloId, setPropostaGerarProtocoloId] = useState(0)
 
   const searchParams = useSearchParams()
 
@@ -60,12 +51,12 @@ const Page = () => {
 
   const columns = [
     { key: 'id', _style: { width: '6%' }, label: 'Código' },
-    { key: 'laboratorio_nome', label: 'Laboratório' },
     { key: 'numero', label: 'Número' },
+    { key: 'proposta_numero', label: 'Proposta' },
     { key: 'createdAt', label: 'Data' },
-    { key: 'clienteNome', _style: { minWidth: '100px' }, label: 'Nome' },
-    { key: 'clienteDocumento', _style: { minWidth: '100px' }, label: 'Documento' },
-    { key: 'clienteEmail', _style: { minWidth: '100px' }, label: 'Email' },
+    { key: 'clienteNome', _style: { minWidth: '100px' }, label: 'Cliente (snapshot)' },
+    { key: 'laboratorio_nome', label: 'Laboratório' },
+    { key: 'quantidadeAmostras', label: 'Amostras' },
     { key: 'valorTotal', label: 'Valor Total' },
     { key: 'status', label: 'Status' },
     { key: 'show_details', label: 'Ação', _style: { width: '2%' }, filter: false, sorter: false },
@@ -80,16 +71,10 @@ const Page = () => {
     return <td>{date.toLocaleDateString()}</td>
   }
 
-  const handleStatusClick = (registro: PropostaComercial) => {
-    setRegistro(registro)
-    setModalStatus(true)
-  }
-
   const status = (item: any) => {
-    const statusStyle = getStatusPropostaStyle(item.status)
-
+    const statusStyle = getStatusProtocoloStyle(item.status)
     return (
-      <td style={{ textAlign: 'center', cursor: 'pointer' }}>
+      <td style={{ textAlign: 'center' }}>
         <span
           style={{
             color: statusStyle.color,
@@ -100,7 +85,6 @@ const Page = () => {
             display: 'inline-block',
             fontSize: '12px',
           }}
-          onClick={() => handleStatusClick(item)}
         >
           {item.status}
         </span>
@@ -108,12 +92,8 @@ const Page = () => {
     )
   }
 
-  const handleGerarProtocoloClick = (item: PropostaComercial) => {
-    setPropostaGerarProtocoloId(item.id)
-    setModalGerarProtocolo(true)
-  }
-
   const show_details = (item: any) => {
+    const podeExcluir = item.status === 'Protocolado' || item.status === 'Cancelado'
     return (
       <td className="py-2">
         <CDropdown variant="dropdown" style={{ position: 'unset' }}>
@@ -122,25 +102,7 @@ const Page = () => {
           </CDropdownToggle>
           <CDropdownMenu className="pt-0" style={{ cursor: 'pointer' }}>
             <CDropdownHeader className="bg-light fw-semibold py-2">Menu</CDropdownHeader>
-            <CDropdownItem onClick={() => handleImprimirClick(item.id)}>
-              <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
-                <CIcon
-                  icon={cilPrint}
-                  size="xl"
-                  style={{ marginRight: '6px', cursor: 'pointer' }}
-                />
-              </CTooltip>
-              Imprimir
-            </CDropdownItem>
-            {item.status === 'Aprovada' ? (
-              <CDropdownItem onClick={() => handleGerarProtocoloClick(item)}>
-                <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
-                  <CIcon icon={cilPlus} size="xl" style={{ marginRight: '6px', cursor: 'pointer' }} />
-                </CTooltip>
-                Gerar Protocolo
-              </CDropdownItem>
-            ) : null}
-            <CDropdownItem onClick={() => handleEditClick(item.id)}>
+            <CDropdownItem onClick={() => router.push(`${endpoint}/${item.id}`)}>
               <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
                 <CIcon
                   icon={cilAlignCenter}
@@ -150,16 +112,14 @@ const Page = () => {
               </CTooltip>
               Alterar
             </CDropdownItem>
-            <CDropdownItem onClick={() => handleExcluirClick(item.id)}>
-              <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
-                <CIcon
-                  icon={cilDelete}
-                  size="xl"
-                  style={{ marginRight: '6px', cursor: 'pointer' }}
-                />
-              </CTooltip>
-              Excluir
-            </CDropdownItem>
+            {podeExcluir ? (
+              <CDropdownItem onClick={() => handleExcluirClick(String(item.id))}>
+                <CTooltip content="Excluir protocolo" placement="top">
+                  <CIcon icon={cilDelete} size="xl" style={{ marginRight: '6px' }} />
+                </CTooltip>
+                Excluir
+              </CDropdownItem>
+            ) : null}
           </CDropdownMenu>
         </CDropdown>
       </td>
@@ -170,25 +130,9 @@ const Page = () => {
     return await apiGeral.getResource(endpointApi, params)
   }
 
-  const handleNewClick = () => {
-    router.push(`${endpoint}/new`)
-  }
-
-  const handleEditClick = (id: string) => {
-    router.push(`${endpoint}/${id}`)
-  }
-
-  const handleImprimirClick = async (id: number) => {
-    window.open(
-      `${API_BASE_URL}/proposta/${id}/imprimir?token=${localStorage.getItem('token')}`,
-      '_blank'
-    )
-  }
-
   const { handleExcluirClick, ConfirmModalComponent } = useDeleteWithConfirm(async (id: string) => {
     try {
       const ret = await apiGeral.deleteResorce(endpointApi, id)
-      console.log('ret', ret)
       if (!ret.success) {
         setMsg('Erro ao excluir registro:' + ret.message)
         return
@@ -207,16 +151,14 @@ const Page = () => {
         <CCol xs={12}>
           <CCard className="mb-4">
             <CCardHeader>
-              <strong>Proposta Comercial</strong>
+              <strong>Protocolos</strong>
             </CCardHeader>
             <CCardBody>
               <CRow className="g-3">
-                <CCol md={6}>{/* <SelectEmpresa id={empresaId} setId={setempresaId} /> */}</CCol>
-                <CCol md={6} className="d-flex align-items-center justify-content-end">
+                <CCol md={12} className="d-flex align-items-center justify-content-end">
                   <FilterTableWrapper
                     search={search}
                     setSearch={setSearch}
-                    handleNewClick={handleNewClick}
                     atualizar={atualizar}
                     setAtualizar={setAtualizar}
                   />
@@ -227,25 +169,10 @@ const Page = () => {
                 columns={columns}
                 scopedColumns={{ status, createdAt, valorTotal, show_details }}
                 search={search}
-                // empresaId={empresaId}
-                // filtroFixo={{ tipo: 'Cliente' }}
                 atualizar={atualizar}
               />
             </CCardBody>
             <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>
-            {registro && (
-              <ModalStatusPropComercial
-                visible={modalStatus}
-                setVisible={setModalStatus}
-                registro={registro as PropostaComercial}
-                setAtualizar={setAtualizar}
-              />
-            )}
-            <ModalGerarProtocolo
-              visible={modalGerarProtocolo}
-              setVisible={setModalGerarProtocolo}
-              propostaComercialId={propostaGerarProtocoloId}
-            />
             {ConfirmModalComponent}
           </CCard>
         </CCol>

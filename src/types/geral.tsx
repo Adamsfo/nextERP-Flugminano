@@ -348,6 +348,80 @@ export interface PropostaComercialItem {
   valorTotal: number
 }
 
+export type ProtocoloStatus =
+  | 'Protocolado'
+  | 'Recebido'
+  | 'Em análise'
+  | 'Finalizado'
+  | 'Cancelado'
+
+export interface Protocolo {
+  id: number
+  propostaComercialId: number
+  empresaId: number
+  clienteFornecedorId: number
+  laboratorioId: number
+  matrizId?: number
+  especificacao?: string
+
+  numero: string
+  data: Date
+  validade?: Date
+
+  clienteNome: string
+  clienteDocumento: string
+  clienteEmail?: string
+  clienteTelefone?: string
+  clienteContato?: string
+
+  enderecoRua?: string
+  enderecoNumero?: string
+  enderecoBairro?: string
+  enderecoCidade?: string
+  enderecoUf?: string
+  enderecoCep?: string
+
+  laboratorioNome?: string
+  matrizDescricao?: string
+
+  valorTotal?: number
+  status: ProtocoloStatus
+
+  observacao?: string
+  quantidadeAmostras: number
+
+  /** flatten getRegistros — PropostaComercial.numero */
+  proposta_numero?: string
+  cliente_nomeFantasia?: string
+  laboratorio_nome?: string
+}
+
+export interface ProtocoloItem {
+  id: number
+  protocoloId?: number
+  analiseId: number
+  tabelaPrecoId: number
+  tabelaPrecoItemId: number
+  normaId?: number
+
+  analiseNome: string
+  metodo?: string
+  unidade?: string
+
+  prazoDias?: number
+
+  vpmMinimo?: number
+  vpmMaximo?: number
+  lqMinimo?: number
+  lqMaximo?: number
+
+  quantidade: number
+  valorUnitario: number
+  valorTotal: number
+
+  norma_descricao?: string
+}
+
 export interface Norma {
   id: number
   descricao: string

@@ -29,32 +29,12 @@ import {
   ClienteFornecedor,
   EnderecoClienteFornecedor,
   FormPropsEdit,
-  PropostaComercial,
-  PropostaComercialItem,
+  Protocolo,
+  ProtocoloItem,
+  ProtocoloStatus,
   QueryParams,
   TabelaPrecoItem,
 } from '@/types/geral'
-import PermissionGate from '@/components/auth/PermissionGate'
-import MaskedInputField from '@/components/tz/MaskedInputField'
-import TextInputField from '@/components/tz/TextInputField'
-import { useTypedSelector } from '../../../store'
-import CButtonSave from '@/components/tz/CButtonSave'
-import CButtonBack from '@/components/tz/CButtonBack'
-import SelectField from '@/components/tz/SelectField'
-import SelectPais from '@/components/select/SelectPais'
-import ModalMsg from '@/components/modal/ModalMsg'
-import SelectCliente from '@/components/select/SelectCliente'
-import { getStatusPropostaStyle } from '@/components/tz/StatusPropostaStyle'
-import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete, cilLoopCircular, cilPencil } from '@coreui/icons'
-import CButtonAdd from '@/components/tz/CButtonAdd'
-import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
-import SelectLaboratorio from '@/components/select/SelectLaboratorio'
-import SelectTabelaPreco from '@/components/select/SelectTabelaPreco'
-import TextInputFieldInteger from '@/components/tz/TextInputFieldInteger'
-import ModalPropostaComercialItem from './modalItem'
-import { formatCurrency } from '@/components/tz/formatters'
-import SelectMatriz from '@/components/select/SelectMatriz'
 import {
   incrementarQuantidadeAnalises,
   mapRegistrosTabelaPrecoToItensBase,
@@ -62,12 +42,34 @@ import {
   processarQuantidadeAnalisesInput,
 } from '@/lib/adicionarAnaliseTabelaPreco'
 import { prepararItemMonetarioParaApi } from '@/lib/monetarioApi'
+import PermissionGate from '@/components/auth/PermissionGate'
+import MaskedInputField from '@/components/tz/MaskedInputField'
+import TextInputField from '@/components/tz/TextInputField'
+import CButtonSave from '@/components/tz/CButtonSave'
+import CButtonBack from '@/components/tz/CButtonBack'
+import SelectField from '@/components/tz/SelectField'
+import SelectPais from '@/components/select/SelectPais'
+import ModalMsg from '@/components/modal/ModalMsg'
+import SelectCliente from '@/components/select/SelectCliente'
+import { getStatusProtocoloStyle } from '@/components/tz/StatusProtocoloStyle'
+import CIcon from '@coreui/icons-react'
+import { cilAlignCenter, cilDelete, cilLoopCircular, cilPencil } from '@coreui/icons'
+import CButtonAdd from '@/components/tz/CButtonAdd'
+import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
+import SelectLaboratorio from '@/components/select/SelectLaboratorio'
+import SelectTabelaPreco from '@/components/select/SelectTabelaPreco'
+import TextInputFieldInteger from '@/components/tz/TextInputFieldInteger'
+import ModalProtocoloItem from './modalItem'
+import { formatCurrency } from '@/components/tz/formatters'
+import SelectMatriz from '@/components/select/SelectMatriz'
 
-const initialFormData: PropostaComercial = {
+const initialFormData: Protocolo = {
   id: 0,
+  propostaComercialId: 0,
   empresaId: 1,
   clienteFornecedorId: 0,
   laboratorioId: 0,
+  matrizId: undefined,
   numero: '',
   data: new Date(),
   validade: undefined,
@@ -82,44 +84,37 @@ const initialFormData: PropostaComercial = {
   enderecoUf: '',
   enderecoCep: '',
   valorTotal: 0,
-  status: 'Rascunho',
+  status: 'Protocolado',
   observacao: '',
+  quantidadeAmostras: 1,
 }
 
 type Registro = typeof initialFormData
 
-export default function PropostaComercialForm({ params }: { params: FormPropsEdit }) {
-  const endpoint = '/propostaComercial'
-  const endpointApi = '/proposta'
-  const endpointApiItem = '/propostaitem'
+export default function ProtocoloForm({ params }: { params: FormPropsEdit }) {
+  const endpoint = '/protocolo'
+  const endpointApi = '/protocolo'
+  const endpointApiItem = '/protocoloitem'
   const endpointApiTabelaPrecoItem = '/tabelaprecoitem'
   const router = useRouter()
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [formData, setFormData] = useState<Registro>(initialFormData)
-  const empresaIdSelecionada = useTypedSelector((state) => state.empresaId)
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
   const [atualizarCliente, setAtualizarCliente] = useState(false)
   const firstLoadRef = useRef(true)
   const [tabelaPrecoId, setTabelaPrecoId] = useState<number | null>(null)
   const [quantidade, setQuantidade] = useState<number | null>(null)
+  const [propostaNumeroVinculo, setPropostaNumeroVinculo] = useState('')
 
-  const [registros, setRegistros] = useState<PropostaComercialItem[] | undefined>([]) // Estado para manter os registros da tabela
-  const [itensAdicionados, setItensAdicionados] = useState<PropostaComercialItem[]>([]) // Itens adicionados localmente
+  const [registros, setRegistros] = useState<ProtocoloItem[] | undefined>([]) // Estado para manter os registros da tabela
+  const [itensAdicionados, setItensAdicionados] = useState<ProtocoloItem[]>([]) // Itens adicionados localmente
   const [itensExcluidos, setItensExcluidos] = useState<number[]>([]) // IDs dos itens excluídos
-  const [itensAtualizados, setItensAtualizados] = useState<PropostaComercialItem[]>([]) // Itens atualizados
+  const [itensAtualizados, setItensAtualizados] = useState<ProtocoloItem[]>([]) // Itens atualizados
 
-  const [item, setItem] = useState<PropostaComercialItem | null>(null)
+  const [item, setItem] = useState<ProtocoloItem | null>(null)
   const [index, setIndex] = useState(0)
   const [modalItem, setModalItem] = useState(false)
-
-  const getRegistros = async (params: QueryParams) => {
-    const reg = await apiGeral.getResource<PropostaComercialItem>(endpointApiItem, {
-      ...params,
-      pageSize: 200,
-    })
-    setRegistros(reg.data || [])
-  }
 
   const handleChange = (
     e?: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -161,16 +156,41 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
   useEffect(() => {
     async function fetchData() {
       if (params.id) {
-        const registro = await apiGeral.getResourceById(endpointApi, parseInt(params.id))
-        setFormData(registro as unknown as Registro)
+        const idNum = parseInt(params.id, 10)
+        const registro = await apiGeral.getResourceById(endpointApi, idNum)
+        const r = registro as unknown as Registro
+        setFormData(r)
 
-        getRegistros({ filters: { propostaComercialId: params.id } })
+        const reg = await apiGeral.getResource<ProtocoloItem>(endpointApiItem, {
+          filters: { protocoloId: params.id },
+          pageSize: 200,
+        })
+        setRegistros(reg.data || [])
       }
     }
     if (params.id) {
       fetchData()
     }
   }, [params.id])
+
+  useEffect(() => {
+    async function loadPropostaNumero() {
+      if (!formData.propostaComercialId) {
+        setPropostaNumeroVinculo('')
+        return
+      }
+      try {
+        const p = (await apiGeral.getResourceById<{ numero: string }>(
+          '/proposta',
+          formData.propostaComercialId
+        )) as { numero?: string }
+        setPropostaNumeroVinculo(p?.numero ?? '')
+      } catch {
+        setPropostaNumeroVinculo('')
+      }
+    }
+    loadPropostaNumero()
+  }, [formData.propostaComercialId])
 
   const fetchClienteFornecedor = async (clienteFornecedorId: number) => {
     if (clienteFornecedorId > 0) {
@@ -253,30 +273,34 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     }
 
     try {
+      if (!params.id) {
+        setMsg('Cadastro de protocolo apenas pela ação "Gerar Protocolo" na listagem da proposta comercial.')
+        setModalMsg(true)
+        router.replace(endpoint)
+        return
+      }
+
       let ret: { data?: { id: number }; success?: boolean; message?: string } = {}
       const { valorTotal, ...payload } = formData
-      if (params.id) {
-        ret = await apiGeral.updateResorce<Registro>(endpointApi, payload)
-      } else {
-        ret = await apiGeral.createResource<Registro>(endpointApi, {
-          ...payload,
-          empresaId: empresaIdSelecionada[0],
-        })
-      }
+      ret = await apiGeral.updateResorce<Registro>(endpointApi, payload)
+
+      const protocoloIdAtual = parseInt(params.id, 10)
 
       // Salvar os itens adicionados
       for (const item of itensAdicionados) {
-        item.propostaComercialId = ret.data?.id || 0
-        await apiGeral.createResource<PropostaComercialItem>(
+        await apiGeral.createResource<ProtocoloItem>(
           endpointApiItem,
-          prepararItemMonetarioParaApi(item)
+          prepararItemMonetarioParaApi({
+            ...item,
+            protocoloId: protocoloIdAtual,
+          })
         )
       }
 
       // Atualizar os itens modificados
       for (const item of itensAtualizados) {
         if (item.id) {
-          await apiGeral.updateResorce<PropostaComercialItem>(
+          await apiGeral.updateResorce<ProtocoloItem>(
             endpointApiItem,
             prepararItemMonetarioParaApi(item)
           )
@@ -292,7 +316,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
         setErrors({ api: ret.message || 'Erro desconhecido' })
         return
       }
-      router.push(`${endpoint}?filter=${ret.data?.id}`)
+      router.push(`${endpoint}?filter=${protocoloIdAtual}`)
       if (params.onClose) {
         params.onClose()
       }
@@ -314,6 +338,10 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     if (!formData.clienteNome) newErrors.clienteNome = 'Nome do cliente é obrigatório.'
     // if (!formData.razaoSocialNome) newErrors.razaoSocialNome = 'Razão social é obrigatório.'
     if (!formData.clienteDocumento) newErrors.clienteDocumento = 'CPF / CNPJ é obrigatório.'
+    const qa = Number(formData.quantidadeAmostras)
+    if (!Number.isFinite(qa) || qa < 1) {
+      newErrors.quantidadeAmostras = 'Quantidade de amostras deve ser maior ou igual a 1.'
+    }
 
     return newErrors
   }
@@ -330,14 +358,16 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     setItem(null)
     setIndex(-1)
 
-    const registros = await getRegistrosTabelaPrecoItem({
+    const registrosLista = await getRegistrosTabelaPrecoItem({
       filters: { tabelaPrecoId: tabelaPrecoId },
     })
 
-    const bases = await mapRegistrosTabelaPrecoToItensBase(registros)
-    const novosItens = montarItensPropostaComercial<PropostaComercialItem>(
-      bases,
-      quantidade || 0
+    const bases = await mapRegistrosTabelaPrecoToItensBase(registrosLista)
+    const novosItens = montarItensPropostaComercial<ProtocoloItem>(bases, quantidade || 0).map(
+      (item) => ({
+        ...item,
+        protocoloId: params.id ? parseInt(params.id, 10) : 0,
+      })
     )
 
     setRegistros((prev) => [...(prev ?? []), ...novosItens])
@@ -378,7 +408,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     )
   }
 
-  const show_details = (item: PropostaComercialItem, index: number) => {
+  const show_details = (item: ProtocoloItem, index: number) => {
     return (
       <td className="py-2">
         <CDropdown variant="dropdown" style={{ position: 'unset' }}>
@@ -405,7 +435,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     )
   }
 
-  const handleAlterar = (item: PropostaComercialItem, index: number) => {
+  const handleAlterar = (item: ProtocoloItem, index: number) => {
     setItem(item)
     setIndex(index)
     setModalItem(true)
@@ -430,50 +460,37 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
     })
   }
 
-  const handleItemChange = <K extends keyof PropostaComercialItem>(
+  const handleItemChange = <K extends keyof ProtocoloItem>(
     index: number,
     field: K,
-    value: PropostaComercialItem[K]
+    value: ProtocoloItem[K]
   ) => {
-    console.log(value)
-    const updatedItens = [...registros!]
+    const updatedItens = [...(registros || [])]
     updatedItens[index][field] = value
     setRegistros(updatedItens)
 
     const existingItem = registros![index]
 
-    // Checa se o item já foi atualizado e, se sim, adiciona na lista de itens atualizados
     if (!itensAtualizados.some((item) => item.id === existingItem.id)) {
       setItensAtualizados((prev) => [...prev, existingItem])
     }
   }
 
-  const handleAdicionarItem = (item: PropostaComercialItem) => {
+  const handleAdicionarItem = (item: ProtocoloItem) => {
     console.log('chegou')
     setRegistros([...(registros || []), item])
     setItensAdicionados((prev) => [...prev, item])
   }
 
   useEffect(() => {
-    const parseValor = (valorTotal: any) => {
-      if (!valorTotal) return 0
-
-      console.log('valorTotal', valorTotal, typeof valorTotal)
-
-      // Se já for número
+    const parseValor = (valorTotal: unknown) => {
+      if (valorTotal === null || valorTotal === undefined) return 0
       if (typeof valorTotal === 'number') return valorTotal
-
-      // Se for string tipo "5,30"
-      if (typeof valorTotal === 'string') {
-        return Number(valorTotal) || 0
-      }
-
+      if (typeof valorTotal === 'string') return Number(valorTotal) || 0
       return 0
     }
 
-    const total = (registros || []).reduce((acc, item) => {
-      return acc + parseValor(item.valorTotal)
-    }, 0)
+    const total = (registros || []).reduce((acc, item) => acc + parseValor(item.valorTotal), 0)
 
     setFormData((prev) => ({
       ...prev,
@@ -487,7 +504,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
         <CCard>
           <CCardHeader>
             <strong>
-              {params.id ? 'Alterando proposta comercial' : 'Cadastrando proposta comercial'}
+              {params.id ? 'Alterando protocolo' : 'Cadastrando protocolo'}
             </strong>
           </CCardHeader>
           <CCardBody>
@@ -507,7 +524,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
               <CCol md={3}>
                 <TextInputField
                   name="numero"
-                  placeholder="Número da Proposta"
+                  placeholder="Número do Protocolo"
                   value={formData.numero ?? ''}
                   // onChange={handleChange}
                   invalid={!!errors.numero}
@@ -522,18 +539,26 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                     type="date"
                     name="data"
                     id="data"
-                    placeholder="Data da Proposta"
+                    placeholder="Data do Protocolo"
                     value={formData.data ? new Date(formData.data).toISOString().split('T')[0] : ''}
                     onChange={handleChange}
                     invalid={!!errors.data}
                     disabled={true}
                   />
-                  <CFormLabel htmlFor="data">Data da Proposta</CFormLabel>
+                  <CFormLabel htmlFor="data">Data do Protocolo</CFormLabel>
                   <CFormFeedback invalid>{errors.data}</CFormFeedback>
                 </CFormFloating>
               </CCol>
 
-              <CCol md={4}></CCol>
+              <CCol md={4}>
+                <TextInputField
+                  name="propostaNumeroVinculo"
+                  placeholder="Proposta comercial (vínculo)"
+                  value={propostaNumeroVinculo}
+                  onChange={() => {}}
+                  disabled={true}
+                />
+              </CCol>
 
               <CCol md={1}>
                 <TextInputField
@@ -544,8 +569,9 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                   feedbackMessage={errors.status}
                   disabled={true}
                   style={{
-                    color: getStatusPropostaStyle(formData.status).color,
-                    backgroundColor: getStatusPropostaStyle(formData.status).background,
+                    color: getStatusProtocoloStyle(formData.status as ProtocoloStatus).color,
+                    backgroundColor: getStatusProtocoloStyle(formData.status as ProtocoloStatus)
+                      .background,
                     fontWeight: 'bold',
                   }}
                 />
@@ -788,7 +814,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                     onClick={() => {
                       setFormData((prev) => ({
                         ...prev,
-                        quantidadeAmostras: Math.max(0, (prev.quantidadeAmostras || 0) - 1),
+                        quantidadeAmostras: Math.max(1, (prev.quantidadeAmostras || 0) - 1),
                       }))
                     }}
                     style={{
@@ -810,7 +836,8 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                       placeholder="Qtd Amostras"
                       value={formData.quantidadeAmostras ?? ''}
                       onChange={(name, rawValue) => {
-                        const numero = Number(rawValue) || 0
+                        let numero = Number(rawValue) || 0
+                        if (numero < 1) numero = 1
 
                         setFormData((prev) => ({
                           ...prev,
@@ -888,13 +915,8 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                     min={0}
                     step={1}
                     onChange={(e) => {
-                      const qtdAmostras = Number(
-                        (formData as PropostaComercial & { quantidadeAmostras?: number })
-                          .quantidadeAmostras || 0
-                      )
                       const { quantidade: q, error } = processarQuantidadeAnalisesInput(
-                        e.target.value,
-                        qtdAmostras
+                        e.target.value
                       )
                       setQuantidade(q)
                       setErrors((prev) => ({
@@ -915,15 +937,8 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                   <button
                     type="button"
                     onClick={() => {
-                      const qtdAmostras = Number(
-                        (formData as PropostaComercial & { quantidadeAmostras?: number })
-                          .quantidadeAmostras || 0
-                      )
                       setQuantidade((prev) => {
-                        const { quantidade: q, error } = incrementarQuantidadeAnalises(
-                          prev,
-                          qtdAmostras
-                        )
+                        const { quantidade: q, error } = incrementarQuantidadeAnalises(prev)
                         setErrors((prevErr) => ({
                           ...prevErr,
                           quantidade: error,
@@ -964,7 +979,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                 <TextInputField
                   name="valorTotal"
                   placeholder="Valor Total"
-                  value={formatCurrency(formData.valorTotal) ?? ''}
+                  value={formatCurrency(Number(formData.valorTotal ?? 0))}
                   // onChange={handleChange}
                   invalid={!!errors.valorTotal}
                   feedbackMessage={errors.valorTotal}
@@ -972,16 +987,16 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                 />
               </CCol>
 
-              <ModalPropostaComercialItem
+              <ModalProtocoloItem
                 modal={modalItem}
                 setModal={setModalItem}
-                item={item || ({} as PropostaComercialItem)}
+                item={item || ({} as ProtocoloItem)}
                 index={index}
-                propostaComercialId={params.id ? parseInt(params.id) : 0}
+                protocoloId={params.id ? parseInt(params.id) : 0}
                 laboratorioId={formData.laboratorioId}
                 handleItemChange={handleItemChange}
                 handleAdicionarItem={handleAdicionarItem}
-              ></ModalPropostaComercialItem>
+              ></ModalProtocoloItem>
 
               {/* <CCol md={2}>
                 <SelectField

@@ -93,6 +93,13 @@ class ApiGeral {
       'blob'
     )
   }
+
+  public async gerarProtocoloDeProposta(body: {
+    propostaComercialId: number
+    quantidadeAmostras: number
+  }): Promise<ApiResponse> {
+    return await api.request('/protocolo/gerar-de-proposta', 'POST', body)
+  }
 }
 
 export const apiGeral = new ApiGeral()

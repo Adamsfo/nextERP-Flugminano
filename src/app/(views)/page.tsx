@@ -15,8 +15,11 @@ const fetchTotalClientes = async (): Promise<number> => {
     const response = await api.request<ClienteFornecedor[]>(endpoint, 'GET', null, { empresaId: 1 })
     console.log(response)
 
-    // Retorna o total de registros (ajuste conforme sua API)
-    return response.length
+    const meta = response.meta as { totalItems?: number } | undefined
+    if (typeof meta?.totalItems === 'number') {
+      return meta.totalItems
+    }
+    return Array.isArray(response.data) ? response.data.length : 0
   } catch (error) {
     console.error('Erro ao buscar clientes:', error)
     return 0

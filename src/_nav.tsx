@@ -62,6 +62,15 @@ const _nav = [
     },
     href: '/propostaComercial',
   },
+  {
+    component: CNavItem,
+    name: 'Protocolos',
+    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+    badge: {
+      color: 'info-gradient',
+    },
+    href: '/protocolo',
+  },
   // {
   //   component: CNavItem,
   //   name: 'Ticket',
