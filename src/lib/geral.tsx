@@ -161,6 +161,14 @@ class ApiGeral {
   public async invalidarPropostaAprovacaoLink(id: number): Promise<ApiResponse> {
     return await api.request(`/proposta-aprovacao-link/${id}/invalidar`, 'POST', {})
   }
+
+  public async verificarClienteDuplicidade(params: {
+    cnpjCpf: string
+    empresaId?: number
+    email?: string
+  }): Promise<ApiResponse> {
+    return await api.request('/clienteFornecedor/verificar-duplicidade', 'GET', null, params)
+  }
 }
 
 export const apiGeral = new ApiGeral()

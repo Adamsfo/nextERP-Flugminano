@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   CButton,
   CCol,
@@ -36,9 +36,25 @@ const ModalEnviarAprovacaoProposta: React.FC<Props> = ({ visible, setVisible, pr
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
+  const [enviandoEmail, setEnviandoEmail] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const clearCloseTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      clearCloseTimeout()
+    }
+  }, [])
 
   useEffect(() => {
     if (!visible || !proposta) return
+    clearCloseTimeout()
     setNomeDestinatario(proposta.clienteNome || '')
     setEmail(proposta.clienteEmail || '')
     setWhatsapp(proposta.clienteTelefone || '')
@@ -46,12 +62,15 @@ const ModalEnviarAprovacaoProposta: React.FC<Props> = ({ visible, setVisible, pr
     setLinkCriado(null)
     setErro('')
     setSucesso('')
+    setEnviandoEmail(false)
   }, [visible, proposta])
 
   const handleClose = () => {
+    clearCloseTimeout()
     setVisible(false)
     setErro('')
     setSucesso('')
+    setEnviandoEmail(false)
   }
 
   const validarFormulario = () => {
@@ -124,6 +143,8 @@ const ModalEnviarAprovacaoProposta: React.FC<Props> = ({ visible, setVisible, pr
     const link = await garantirLink()
     if (!link?.token) return
 
+    clearCloseTimeout()
+    setEnviandoEmail(true)
     setLoading(true)
     setErro('')
     setSucesso('')
@@ -137,8 +158,16 @@ const ModalEnviarAprovacaoProposta: React.FC<Props> = ({ visible, setVisible, pr
         return
       }
       setSucesso('E-mail enviado com sucesso.')
+      timeoutRef.current = setTimeout(() => {
+        handleClose()
+      }, 2000)
+    } catch (e: unknown) {
+      setErro(String(e))
     } finally {
       setLoading(false)
+      if (!timeoutRef.current) {
+        setEnviandoEmail(false)
+      }
     }
   }
 
@@ -218,7 +247,12 @@ const ModalEnviarAprovacaoProposta: React.FC<Props> = ({ visible, setVisible, pr
         <CButton color="info" variant="outline" onClick={handleCopiarLink} disabled={loading}>
           Copiar Link
         </CButton>
-        <CButton color="primary" variant="outline" onClick={handleEnviarEmail} disabled={loading}>
+        <CButton
+          color="primary"
+          variant="outline"
+          onClick={handleEnviarEmail}
+          disabled={loading || enviandoEmail}
+        >
           Enviar Email
         </CButton>
         <CButton color="success" onClick={handleAbrirWhatsApp} disabled={loading}>

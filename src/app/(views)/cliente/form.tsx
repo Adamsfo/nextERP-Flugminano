@@ -30,22 +30,17 @@ import SelectField from '@/components/tz/SelectField'
 import SelectPais from '@/components/select/SelectPais'
 import ModalMsg from '@/components/modal/ModalMsg'
 import MaskedInputField from '@/components/tz/MaskedInputField'
+import {
+  buscarEnderecoPorCep,
+  getClienteDocumentoMask,
+  initialClienteFornecedorForm,
+  initialEnderecoClienteFornecedor,
+  validateClienteFornecedor,
+} from '@/lib/clienteFornecedorForm'
 
-const initialFormData: ClienteFornecedor = {
-  id: 0,
-  tipo: 'Cliente',
-  cnpjCpf: '',
-  razaoSocialNome: '',
-  consumidorFinal: 'Sim',
-  contribuinte: 'Sim',
-  empresaId: 1,
-  tipoDocumento: 'CPF',
-  nacionalidade: 'Brazil',
-}
+const initialFormData: ClienteFornecedor = initialClienteFornecedorForm
 
-const initialEndereco: EnderecoClienteFornecedor = {
-  tipoEndereco: 'Residencial',
-}
+const initialEndereco: EnderecoClienteFornecedor = initialEnderecoClienteFornecedor
 
 type Registro = ClienteFornecedor
 
@@ -213,59 +208,32 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
     }
   }
 
-  const validate = () => {
-    const newErrors: { [key: string]: string } = {}
-
-    if (!formData.nomeFantasia) newErrors.nomeFantasia = 'Nome fantasia é obrigatório.'
-    // if (!formData.razaoSocialNome) newErrors.razaoSocialNome = 'Razão social é obrigatório.'
-    if (!formData.cnpjCpf) newErrors.cnpjCpf = 'CPF / CNPJ é obrigatório.'
-
-    return newErrors
-  }
-
-  // Função para retornar a máscara com base no tipo de documento selecionado
-  const getMask = (tipo: string): string => {
-    if (tipo === 'CPF') return '999.999.999-99'
-    if (tipo === 'CNPJ') return '99.999.999/9999-99'
-    if (tipo === 'RG') return '99.999.999-9'
-    return '' // Outros tipos não têm máscara
-  }
+  const validate = () => validateClienteFornecedor(formData, 'full')
 
   const buscarCep = async (cep: string) => {
-    const url = (cep: any) => `http://viacep.com.br/ws/${cep.replace('-', '')}/json/`
-
-    // Verifica se o CEP é válido antes de fazer a requisição
-    if (cep && cep.replace('-', '').length === 8) {
-      try {
-        const response = await fetch(url(cep), { mode: 'cors' })
-
-        // Verifica se a resposta foi bem-sucedida
-        if (!response.ok) {
-          setMsg('Erro ao buscar o CEP')
-          setModalMsg(true)
-        }
-
-        const data = await response.json()
-
-        // Verifica se o CEP retornou um erro
-        if (data.hasOwnProperty('erro')) {
-          setMsg('CEP não encontrado')
-          setModalMsg(true)
-        } else {
-          handleChangeEndereco(undefined, 'uf', data.uf)
-          handleChangeEndereco(undefined, 'nomeCidade', data.localidade)
-          handleChangeEndereco(undefined, 'cidadeId', data.ibge)
-          handleChangeEndereco(undefined, 'bairro', data.bairro)
-          handleChangeEndereco(undefined, 'rua', data.logradouro)
-          handleChangeEndereco(undefined, 'complemento', data.complemento)
-          handleChangeEndereco(undefined, 'observacao', data.unidade)
-        }
-      } catch (err) {
-        // alert(err.message || 'Ocorreu um erro ao buscar o CEP.')
-        // console.error(err) // Log do erro para depuração
-      }
-    } else {
+    const digits = cep.replace(/\D/g, '')
+    if (digits.length !== 8) {
       setMsg('CEP inválido. O CEP deve ter 8 dígitos.')
+      setModalMsg(true)
+      return
+    }
+
+    try {
+      const data = await buscarEnderecoPorCep(cep)
+      if (!data) {
+        setMsg('CEP não encontrado')
+        setModalMsg(true)
+        return
+      }
+      handleChangeEndereco(undefined, 'uf', data.uf)
+      handleChangeEndereco(undefined, 'nomeCidade', data.nomeCidade)
+      handleChangeEndereco(undefined, 'cidadeId', data.cidadeId)
+      handleChangeEndereco(undefined, 'bairro', data.bairro)
+      handleChangeEndereco(undefined, 'rua', data.rua)
+      handleChangeEndereco(undefined, 'complemento', data.complemento)
+      handleChangeEndereco(undefined, 'observacao', data.observacao)
+    } catch {
+      setMsg('Erro ao buscar o CEP')
       setModalMsg(true)
     }
   }
@@ -454,7 +422,7 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                   onChange={handleChange}
                   invalid={!!errors.cnpjCpf}
                   feedbackMessage={errors.cnpjCpf}
-                  mask={getMask(formData.tipoDocumento ?? '')}
+                  mask={getClienteDocumentoMask(formData.tipoDocumento)}
                 />
               </CCol>
 

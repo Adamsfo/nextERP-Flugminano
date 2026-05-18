@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ChangeEvent, useRef } from 'react'
+import { useState, useEffect, ChangeEvent, useRef, useMemo } from 'react'
 import {
   CCard,
   CCardBody,
@@ -46,7 +46,7 @@ import ModalMsg from '@/components/modal/ModalMsg'
 import SelectCliente from '@/components/select/SelectCliente'
 import { getStatusPropostaStyle } from '@/components/tz/StatusPropostaStyle'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete, cilLoopCircular, cilPencil } from '@coreui/icons'
+import { cilAlignCenter, cilDelete, cilPencil } from '@coreui/icons'
 import CButtonAdd from '@/components/tz/CButtonAdd'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import SelectLaboratorio from '@/components/select/SelectLaboratorio'
@@ -62,6 +62,8 @@ import {
   processarQuantidadeAnalisesInput,
 } from '@/lib/adicionarAnaliseTabelaPreco'
 import { prepararItemMonetarioParaApi } from '@/lib/monetarioApi'
+import ModalCadastroRapidoCliente from '@/components/cliente/ModalCadastroRapidoCliente'
+import { AppToaster, useAppToast } from '@/components/tz/useAppToast'
 
 const initialFormData: PropostaComercial = {
   id: 0,
@@ -100,6 +102,9 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
   const [atualizarCliente, setAtualizarCliente] = useState(false)
+  const [clienteSelectRefresh, setClienteSelectRefresh] = useState(0)
+  const [modalClienteRapido, setModalClienteRapido] = useState(false)
+  const { toasts, pushToast } = useAppToast()
   const firstLoadRef = useRef(true)
   const [tabelaPrecoId, setTabelaPrecoId] = useState<number | null>(null)
   const [quantidade, setQuantidade] = useState<number | null>(null)
@@ -242,6 +247,22 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
 
     fetchData()
   }, [formData.clienteFornecedorId, atualizarCliente])
+
+  const clienteSelectFallback = useMemo(() => {
+    if (formData.clienteFornecedorId <= 0) return null
+    const nome = formData.clienteNome?.trim() || ''
+    const doc = formData.clienteDocumento?.trim() || ''
+    if (!nome && !doc) return null
+    const label = nome && doc ? `${nome} - ${doc}` : nome || doc
+    return { value: formData.clienteFornecedorId, label }
+  }, [formData.clienteFornecedorId, formData.clienteNome, formData.clienteDocumento])
+
+  const handleClienteSalvo = (clienteId: number) => {
+    firstLoadRef.current = false
+    handleChange(undefined, 'clienteFornecedorId', clienteId)
+    setClienteSelectRefresh((v) => v + 1)
+    setAtualizarCliente((v) => !v)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -561,24 +582,29 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                 ></SelectLaboratorio>
               </CCol>
 
-              <CCol md={3} className="d-flex align-items-center">
-                <div style={{ flex: 1 }}>
-                  <SelectCliente
-                    id={formData.clienteFornecedorId}
-                    setId={(clienteId) => handleChange(undefined, 'clienteFornecedorId', clienteId)}
-                    invalid={!!errors.clienteFornecedorId}
-                    feedbackMessage={errors.clienteFornecedorId}
-                  />
-                </div>
-
-                <CTooltip content="Atualizar Pesquisa" placement="top">
-                  <CIcon
-                    icon={cilLoopCircular}
-                    size="xl"
-                    style={{ marginLeft: '8px', cursor: 'pointer' }}
-                    onClick={() => setAtualizarCliente((prev) => !prev)}
-                  />
-                </CTooltip>
+              <CCol md={4}>
+                <SelectCliente
+                  id={
+                    formData.clienteFornecedorId > 0 ? formData.clienteFornecedorId : null
+                  }
+                  setId={(clienteId) => {
+                    if (clienteId) {
+                      firstLoadRef.current = false
+                      handleChange(undefined, 'clienteFornecedorId', clienteId)
+                    }
+                  }}
+                  fallbackOption={clienteSelectFallback}
+                  invalid={!!errors.clienteFornecedorId}
+                  feedbackMessage={errors.clienteFornecedorId}
+                  showQuickAdd
+                  onQuickAddClick={() => setModalClienteRapido(true)}
+                  showRefresh
+                  onRefreshClick={() => {
+                    setClienteSelectRefresh((v) => v + 1)
+                    setAtualizarCliente((prev) => !prev)
+                  }}
+                  refreshToken={clienteSelectRefresh}
+                />
               </CCol>
 
               <CCol md={2}>
@@ -1015,6 +1041,14 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
             </CRow>
             {errors.api && <div className="text-danger">{errors.api}</div>}
             <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>
+            <ModalCadastroRapidoCliente
+              visible={modalClienteRapido}
+              setVisible={setModalClienteRapido}
+              empresaId={empresaIdSelecionada[0] ?? formData.empresaId}
+              onClienteSalvo={handleClienteSalvo}
+              onToast={pushToast}
+            />
+            <AppToaster toasts={toasts} />
           </CCardBody>
           <CCardFooter>
             <CButtonBack onClick={handleVoltar} />

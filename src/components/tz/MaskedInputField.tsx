@@ -23,13 +23,16 @@ const MaskedInputField: React.FC<MaskedInputFieldProps> = ({
 }) => (
   <CFormFloating className="mb-3">
     <InputMask mask={mask} value={value} onChange={onChange} maskChar={null}>
-      <CFormInput
-        type="text"
-        id={name}
-        name={name}
-        placeholder={placeholder}
-        invalid={invalid}
-      />
+      {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
+        <CFormInput
+          {...inputProps}
+          type="text"
+          id={name}
+          name={name}
+          placeholder={placeholder}
+          invalid={invalid}
+        />
+      )}
     </InputMask>
     <CFormLabel htmlFor={name}>{placeholder}</CFormLabel>
     {invalid && feedbackMessage && <CFormFeedback invalid>{feedbackMessage}</CFormFeedback>}
