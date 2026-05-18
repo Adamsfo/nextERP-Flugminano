@@ -26,6 +26,7 @@ import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
 import { formatCurrency } from '@/components/tz/formatters'
 import { getStatusProtocoloStyle } from '@/components/tz/StatusProtocoloStyle'
+import { laboratoriosListUrl } from '@/lib/laboratoriosNav'
 import ModalGerarLaboratorios from './ModalGerarLaboratorios'
 
 const Page = () => {
@@ -78,23 +79,64 @@ const Page = () => {
     return <td>{date.toLocaleDateString()}</td>
   }
 
+  const handleLabGeradosClick = (item: { numero?: string }) => {
+    const numero = item.numero?.trim()
+    if (!numero) return
+    router.push(
+      laboratoriosListUrl({
+        search: numero,
+        filterField: 'protocolo_numero',
+      })
+    )
+  }
+
   const status = (item: any) => {
     const statusStyle = getStatusProtocoloStyle(item.status)
+    const labGerados = item.status === 'Lab. Gerado(s)'
+    const badgeStyle = {
+      color: statusStyle.color,
+      backgroundColor: statusStyle.background,
+      fontWeight: 'bold',
+      padding: '2px 8px',
+      borderRadius: '6px',
+      display: 'inline-block',
+      fontSize: '12px',
+    }
+
     return (
       <td style={{ textAlign: 'center' }}>
-        <span
-          style={{
-            color: statusStyle.color,
-            backgroundColor: statusStyle.background,
-            fontWeight: 'bold',
-            padding: '2px 8px',
-            borderRadius: '6px',
-            display: 'inline-block',
-            fontSize: '12px',
-          }}
-        >
-          {item.status}
-        </span>
+        {labGerados ? (
+          <CTooltip content="Ver laboratórios deste protocolo" placement="top">
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={() => handleLabGeradosClick(item)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleLabGeradosClick(item)
+                }
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.filter = 'brightness(0.92)'
+                e.currentTarget.style.boxShadow = '0 1px 4px rgba(0, 0, 0, 0.15)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.filter = ''
+                e.currentTarget.style.boxShadow = ''
+              }}
+              style={{
+                ...badgeStyle,
+                cursor: 'pointer',
+                transition: 'filter 0.15s ease, box-shadow 0.15s ease',
+              }}
+            >
+              {item.status}
+            </span>
+          </CTooltip>
+        ) : (
+          <span style={badgeStyle}>{item.status}</span>
+        )}
       </td>
     )
   }

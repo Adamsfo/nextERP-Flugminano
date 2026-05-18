@@ -106,6 +106,61 @@ class ApiGeral {
   }): Promise<ApiResponse> {
     return await api.request('/laboratorios/gerar-de-protocolo', 'POST', body)
   }
+
+  public async patchLaboratorioNome(
+    id: number,
+    nome: string | null
+  ): Promise<ApiResponse> {
+    return await api.request(`/laboratorios/${id}/nome`, 'PATCH', { nome })
+  }
+
+  public async preencherNomesLaboratoriosSequencial(body: {
+    protocoloId?: number
+    protocolo_numero?: string
+    prefix: string
+  }): Promise<ApiResponse<{ updated: number; protocoloId: number }>> {
+    return await api.request('/laboratorios/preencher-nomes-sequencial', 'POST', body)
+  }
+
+  public async criarLinkAprovacaoProposta(body: {
+    propostaComercialId: number
+    nomeDestinatario: string
+    email?: string
+    whatsapp?: string
+    diasExpiracao?: number
+  }): Promise<ApiResponse> {
+    return await api.request('/proposta-aprovacao-link', 'POST', body)
+  }
+
+  public async enviarEmailAprovacaoProposta(body: {
+    token: string
+    mensagem?: string
+  }): Promise<ApiResponse> {
+    return await api.request('/proposta-aprovacao-link/enviar-email', 'POST', body)
+  }
+
+  public async getPropostaAprovacaoLinks(params?: QueryParams): Promise<ApiResponse> {
+    return await api.request('/proposta-aprovacao-link', 'GET', null, params)
+  }
+
+  public async getPropostaAprovacaoLinkById<T = unknown>(id: number): Promise<ApiResponse<T>> {
+    return await api.request<T>(`/proposta-aprovacao-link/${id}`, 'GET')
+  }
+
+  public async reenviarEmailPropostaAprovacaoLink(
+    id: number,
+    body?: { mensagem?: string }
+  ): Promise<ApiResponse> {
+    return await api.request(`/proposta-aprovacao-link/${id}/reenviar-email`, 'POST', body || {})
+  }
+
+  public async gerarNovoLinkPropostaAprovacao(id: number): Promise<ApiResponse> {
+    return await api.request(`/proposta-aprovacao-link/${id}/gerar-novo-link`, 'POST', {})
+  }
+
+  public async invalidarPropostaAprovacaoLink(id: number): Promise<ApiResponse> {
+    return await api.request(`/proposta-aprovacao-link/${id}/invalidar`, 'POST', {})
+  }
 }
 
 export const apiGeral = new ApiGeral()

@@ -17,7 +17,7 @@ import {
 import { apiGeral } from '@/lib/geral'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete, cilPlus, cilPrint } from '@coreui/icons'
+import { cilAlignCenter, cilDelete, cilPlus, cilPrint, cilSend } from '@coreui/icons'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { PropostaComercial, QueryParams } from '@/types/geral'
@@ -30,6 +30,7 @@ import { getStatusPropostaStyle } from '@/components/tz/StatusPropostaStyle'
 import { API_BASE_URL } from '@/lib/api'
 import ModalStatusPropComercial from './ModalStatusPropComercial'
 import ModalGerarProtocolo from './ModalGerarProtocolo'
+import ModalEnviarAprovacaoProposta from './ModalEnviarAprovacaoProposta'
 
 const Page = () => {
   const endpoint = '/propostaComercial'
@@ -43,6 +44,7 @@ const Page = () => {
   const [registro, setRegistro] = useState<PropostaComercial | null>(null)
   const [modalStatus, setModalStatus] = useState(false)
   const [modalGerarProtocolo, setModalGerarProtocolo] = useState(false)
+  const [modalEnviarAprovacao, setModalEnviarAprovacao] = useState(false)
   const [propostaGerarProtocolo, setPropostaGerarProtocolo] = useState<{
     id: number
     quantidadeAmostras?: number
@@ -88,7 +90,42 @@ const Page = () => {
     setModalStatus(true)
   }
 
-  const status = (item: any) => {
+  const badgeAprovacaoExterna = (item: PropostaComercial) => {
+    if (item.aprovacaoLinkStatus === 'PENDENTE' && item.status !== 'Aprovada') {
+      return (
+        <span
+          className="d-block mt-1"
+          style={{
+            color: '#0d6efd',
+            backgroundColor: '#e7f1ff',
+            fontWeight: '600',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            fontSize: '11px',
+          }}
+        >
+          Aguardando Aprovação
+        </span>
+      )
+    }
+    if (item.aprovacaoLinkStatus === 'APROVADA' && item.aprovacaoNomeAprovador) {
+      return (
+        <small className="d-block mt-1 text-body-secondary">
+          Aprovado por {item.aprovacaoNomeAprovador}
+        </small>
+      )
+    }
+    if (item.aprovacaoLinkStatus === 'REPROVADA' && item.aprovacaoNomeAprovador) {
+      return (
+        <small className="d-block mt-1 text-body-secondary">
+          Reprovado por {item.aprovacaoNomeAprovador}
+        </small>
+      )
+    }
+    return null
+  }
+
+  const status = (item: PropostaComercial) => {
     const statusStyle = getStatusPropostaStyle(item.status)
 
     return (
@@ -107,8 +144,14 @@ const Page = () => {
         >
           {item.status}
         </span>
+        {badgeAprovacaoExterna(item)}
       </td>
     )
+  }
+
+  const handleEnviarAprovacaoClick = (item: PropostaComercial) => {
+    setRegistro(item)
+    setModalEnviarAprovacao(true)
   }
 
   const handleGerarProtocoloClick = (item: PropostaComercial) => {
@@ -138,6 +181,14 @@ const Page = () => {
               </CTooltip>
               Imprimir
             </CDropdownItem>
+            {item.status !== 'Aprovada' && item.status !== 'Cancelada' ? (
+              <CDropdownItem onClick={() => handleEnviarAprovacaoClick(item)}>
+                <CTooltip content="Enviar link de aprovação ao cliente" placement="top">
+                  <CIcon icon={cilSend} size="xl" style={{ marginRight: '6px' }} />
+                </CTooltip>
+                Enviar para Aprovação
+              </CDropdownItem>
+            ) : null}
             {item.status === 'Aprovada' ? (
               <CDropdownItem onClick={() => handleGerarProtocoloClick(item)}>
                 <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
@@ -253,6 +304,13 @@ const Page = () => {
                 setVisible={setModalGerarProtocolo}
                 propostaComercialId={propostaGerarProtocolo.id}
                 propostaQuantidadeAmostras={propostaGerarProtocolo.quantidadeAmostras}
+              />
+            ) : null}
+            {registro ? (
+              <ModalEnviarAprovacaoProposta
+                visible={modalEnviarAprovacao}
+                setVisible={setModalEnviarAprovacao}
+                proposta={registro}
               />
             ) : null}
             {ConfirmModalComponent}

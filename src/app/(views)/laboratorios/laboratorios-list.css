@@ -46,6 +46,28 @@
 }
 
 /* Conteúdo expandido: continuação da linha, sem bloco separado */
+.laboratorio-nome-cell {
+  min-width: 160px;
+}
+
+.laboratorio-nome-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.laboratorio-nome-input {
+  padding-right: 2rem;
+}
+
+.laboratorio-nome-spinner {
+  position: absolute;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
 .laboratorio-detail-expanded {
   padding: 0.25rem var(--cui-table-cell-padding-x, 0.75rem) 0.5rem;
   border-top: 0;

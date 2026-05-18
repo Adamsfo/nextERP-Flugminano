@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  CButton,
   CCard,
   CCardBody,
   CCardHeader,
@@ -19,7 +20,7 @@ import CIcon from '@coreui/icons-react'
 import { cilAlignCenter, cilChevronBottom, cilChevronRight, cilDelete } from '@coreui/icons'
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { LaboratoriosItem, QueryParams } from '@/types/geral'
+import { Laboratorios, LaboratoriosItem, QueryParams } from '@/types/geral'
 import LaboratorioItensResumo, {
   LaboratorioItensCacheEntry,
 } from './LaboratorioItensResumo'
@@ -34,6 +35,9 @@ import {
   laboratoriosListQueryFromState,
   laboratoriosListStateFromSearchParams,
 } from '@/lib/laboratoriosNav'
+import LaboratorioNomeInline from './LaboratorioNomeInline'
+import ModalPreencherNomesSequencial from './ModalPreencherNomesSequencial'
+import { LaboratoriosToaster, useLaboratoriosToast } from './LaboratoriosToast'
 
 const Page = () => {
   const endpoint = '/laboratorios'
@@ -51,6 +55,11 @@ const Page = () => {
   const [msg, setMsg] = useState('')
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
   const [itensCache, setItensCache] = useState<Record<number, LaboratorioItensCacheEntry>>({})
+  const [modalPreencherNomes, setModalPreencherNomes] = useState(false)
+  const { toasts, pushToast } = useLaboratoriosToast()
+
+  const protocoloNumeroFiltro =
+    filtroFixo?.protocolo_numero != null ? String(filtroFixo.protocolo_numero).trim() : ''
 
   const endpointItensApi = '/laboratorios-itens'
 
@@ -138,6 +147,7 @@ const Page = () => {
     { key: 'numero', label: 'Número' },
     { key: 'protocolo_numero', label: 'Protocolo' },
     { key: 'sequenciaAmostra', label: 'Seq. Amostra' },
+    { key: 'nome', label: 'Nome da Amostra', _style: { minWidth: '160px' } },
     { key: 'dataGeracao', label: 'Data geração' },
     { key: 'cliente_nomeFantasia', _style: { minWidth: '100px' }, label: 'Cliente' },
     { key: 'laboratorio_nome', label: 'Laboratório' },
@@ -170,6 +180,14 @@ const Page = () => {
       </td>
     )
   }
+
+  const nomeAmostra = (item: Laboratorios) => (
+    <LaboratorioNomeInline
+      item={item}
+      onToast={pushToast}
+      onSaved={() => setAtualizar((v) => !v)}
+    />
+  )
 
   const detalhes = (item: any) => {
     const aberto = Boolean(expandedRows[item.id])
@@ -264,7 +282,29 @@ const Page = () => {
             </CCardHeader>
             <CCardBody>
               <CRow className="g-3">
-                <CCol md={12} className="d-flex align-items-center justify-content-end">
+                <CCol
+                  md={12}
+                  className="d-flex flex-wrap align-items-center justify-content-end gap-2"
+                >
+                  <CTooltip
+                    content={
+                      protocoloNumeroFiltro
+                        ? 'Preencher nomes das amostras deste protocolo em sequência'
+                        : 'Filtre por protocolo (busca com filtro de protocolo) para usar o preenchimento em lote'
+                    }
+                  >
+                    <span className="d-inline-block">
+                      <CButton
+                        color="secondary"
+                        variant="outline"
+                        size="sm"
+                        disabled={!protocoloNumeroFiltro}
+                        onClick={() => setModalPreencherNomes(true)}
+                      >
+                        Preencher sequencialmente
+                      </CButton>
+                    </span>
+                  </CTooltip>
                   <FilterTableWrapper
                     search={search}
                     setSearch={setSearch}
@@ -276,7 +316,14 @@ const Page = () => {
               <SmartTableWrapper
                 fetchFunction={getRegistros}
                 columns={columns}
-                scopedColumns={{ detalhes, status, dataGeracao, show_details, details: detailRow }}
+                scopedColumns={{
+                  detalhes,
+                  nome: nomeAmostra,
+                  status,
+                  dataGeracao,
+                  show_details,
+                  details: detailRow,
+                }}
                 search={search}
                 filtroFixo={filtroFixo}
                 atualizar={atualizar}
@@ -290,6 +337,14 @@ const Page = () => {
             </CCardBody>
             <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>
             {ConfirmModalComponent}
+            <ModalPreencherNomesSequencial
+              visible={modalPreencherNomes}
+              setVisible={setModalPreencherNomes}
+              protocoloNumero={protocoloNumeroFiltro}
+              onToast={pushToast}
+              onSuccess={() => setAtualizar((v) => !v)}
+            />
+            <LaboratoriosToaster toasts={toasts} />
           </CCard>
         </CCol>
       </CRow>

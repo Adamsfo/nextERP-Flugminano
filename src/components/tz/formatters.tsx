@@ -33,3 +33,22 @@ export const formatInteger = (value: string | number): string => {
     typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : Math.round(value)
   return isNaN(numericValue) ? '0' : numericValue.toLocaleString('pt-BR')
 }
+
+export const formatarCpfExibicao = (cpf?: string | null): string => {
+  if (!cpf) return '-'
+  const digits = cpf.replace(/\D/g, '')
+  if (digits.length !== 11) return cpf
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+}
+
+export const formatarWhatsApp = (valor?: string | null): string => {
+  if (!valor) return '-'
+  const digits = valor.replace(/\D/g, '')
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  }
+  return valor
+}

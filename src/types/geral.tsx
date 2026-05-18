@@ -321,6 +321,36 @@ export interface PropostaComercial {
 
   observacao?: string
   quantidadeAmostras?: number
+
+  aprovacaoLinkStatus?: 'PENDENTE' | 'APROVADA' | 'REPROVADA' | 'EXPIRADO' | null
+  aprovacaoNomeAprovador?: string | null
+  aprovacaoAprovadoEm?: string | null
+}
+
+export type PropostaAprovacaoLinkStatus = 'PENDENTE' | 'APROVADA' | 'REPROVADA' | 'EXPIRADO'
+
+export interface PropostaAprovacaoLink {
+  id: number
+  propostaComercialId: number
+  token: string
+  nomeDestinatario: string
+  email?: string
+  whatsapp?: string
+  status: PropostaAprovacaoLinkStatus
+  expiraEm: string
+  aprovadoEm?: string
+  nomeAprovador?: string
+  cpfAprovador?: string
+  ipAprovacao?: string
+  observacaoReprovacao?: string
+  createdAt?: string
+  updatedAt?: string
+  proposta_numero?: string
+  proposta_clienteNome?: string
+  proposta_status?: string
+  proposta_valorTotal?: number
+  publicUrl?: string
+  proposta?: PropostaComercial
 }
 
 export interface PropostaComercialItem {
@@ -452,6 +482,7 @@ export interface Laboratorios {
   dataGeracao: Date | string
   status: LaboratoriosStatus
   observacao?: string
+  nome?: string | null
 
   protocolo_numero?: string
   cliente_nomeFantasia?: string

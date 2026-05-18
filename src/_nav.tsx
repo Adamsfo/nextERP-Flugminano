@@ -1,6 +1,7 @@
 import React, { ElementType } from 'react'
 import {
   cilBeaker,
+  cilCheckCircle,
   cilClipboard,
   cilDescription,
   cilDollar,
@@ -53,13 +54,23 @@ const _nav = [
   //   href: '/torneio',
   // },
   {
-    component: CNavItem,
+    component: CNavGroup,
     name: 'Proposta Comercial',
     icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
-    badge: {
-      color: 'info-gradient',
-    },
-    href: '/propostaComercial',
+    items: [
+      {
+        component: CNavItem,
+        name: 'Propostas',
+        icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
+        href: '/propostaComercial',
+      },
+      {
+        component: CNavItem,
+        name: 'Aprovações',
+        icon: <CIcon icon={cilCheckCircle} customClassName="nav-icon" />,
+        href: '/propostaComercial/aprovacoes',
+      },
+    ],
   },
   {
     component: CNavItem,
