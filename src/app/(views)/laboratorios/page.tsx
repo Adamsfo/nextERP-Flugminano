@@ -16,10 +16,14 @@ import {
 import { apiGeral } from '@/lib/geral'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete } from '@coreui/icons'
-import { useEffect, useState } from 'react'
+import { cilAlignCenter, cilChevronBottom, cilChevronRight, cilDelete } from '@coreui/icons'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { QueryParams } from '@/types/geral'
+import { LaboratoriosItem, QueryParams } from '@/types/geral'
+import LaboratorioItensResumo, {
+  LaboratorioItensCacheEntry,
+} from './LaboratorioItensResumo'
+import './laboratorios-list.css'
 import PermissionGate from '@/components/auth/PermissionGate'
 import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
@@ -45,6 +49,75 @@ const Page = () => {
   const router = useRouter()
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
+  const [itensCache, setItensCache] = useState<Record<number, LaboratorioItensCacheEntry>>({})
+
+  const endpointItensApi = '/laboratorios-itens'
+
+  const extrairNomeAnalise = (item: LaboratoriosItem): string | null => {
+    const nome =
+      item.analiseNome ||
+      item.analise_nome ||
+      (item as LaboratoriosItem & { analise?: { nome?: string } }).analise?.nome
+    if (!nome || !String(nome).trim()) return null
+    return String(nome).trim()
+  }
+
+  const loadItens = useCallback(async (laboratorioId: number) => {
+    setItensCache((prev) => ({
+      ...prev,
+      [laboratorioId]: {
+        loading: true,
+        loaded: false,
+        nomes: prev[laboratorioId]?.nomes ?? [],
+      },
+    }))
+
+    try {
+      const reg = await apiGeral.getResource<LaboratoriosItem>(endpointItensApi, {
+        laboratorioId: String(laboratorioId),
+        pageSize: 500,
+        sortBy: 'id',
+        order: 'asc',
+      })
+      const nomes = (reg.data || [])
+        .map(extrairNomeAnalise)
+        .filter((nome): nome is string => Boolean(nome))
+      setItensCache((prev) => ({
+        ...prev,
+        [laboratorioId]: { loading: false, loaded: true, nomes },
+      }))
+    } catch {
+      setItensCache((prev) => ({
+        ...prev,
+        [laboratorioId]: { loading: false, loaded: true, nomes: [] },
+      }))
+    }
+  }, [])
+
+  const ensureItensLoaded = useCallback(
+    (laboratorioId: number) => {
+      setItensCache((prev) => {
+        const atual = prev[laboratorioId]
+        if (atual?.loaded || atual?.loading) return prev
+        void loadItens(laboratorioId)
+        return prev
+      })
+    },
+    [loadItens]
+  )
+
+  const toggleExpand = (laboratorioId: number) => {
+    setExpandedRows((prev) => {
+      if (prev[laboratorioId]) {
+        const next = { ...prev }
+        delete next[laboratorioId]
+        return next
+      }
+      ensureItensLoaded(laboratorioId)
+      return { ...prev, [laboratorioId]: true }
+    })
+  }
 
   useEffect(() => {
     const next = laboratoriosListStateFromSearchParams(searchParams)
@@ -54,6 +127,13 @@ const Page = () => {
   }, [searchParams])
 
   const columns = [
+    {
+      key: 'detalhes',
+      label: 'Detalhes',
+      _style: { width: '4%' },
+      filter: false,
+      sorter: false,
+    },
     { key: 'id', _style: { width: '6%' }, label: 'Código' },
     { key: 'numero', label: 'Número' },
     { key: 'protocolo_numero', label: 'Protocolo' },
@@ -88,6 +168,37 @@ const Page = () => {
           {item.status}
         </span>
       </td>
+    )
+  }
+
+  const detalhes = (item: any) => {
+    const aberto = Boolean(expandedRows[item.id])
+    return (
+      <td className="py-2 text-center">
+        <button
+          type="button"
+          className="btn btn-link p-0 border-0 text-body"
+          aria-expanded={aberto}
+          aria-label={aberto ? 'Recolher análises' : 'Expandir análises'}
+          onClick={(e) => {
+            e.stopPropagation()
+            toggleExpand(item.id)
+          }}
+        >
+          <CIcon icon={aberto ? cilChevronBottom : cilChevronRight} size="lg" />
+        </button>
+      </td>
+    )
+  }
+
+  const detailRow = (item: any) => {
+    if (!expandedRows[item.id]) {
+      return <div className="laboratorio-detail-row-hidden" aria-hidden />
+    }
+    return (
+      <div className="laboratorio-detail-expanded">
+        <LaboratorioItensResumo cache={itensCache[item.id]} />
+      </div>
     )
   }
 
@@ -165,10 +276,16 @@ const Page = () => {
               <SmartTableWrapper
                 fetchFunction={getRegistros}
                 columns={columns}
-                scopedColumns={{ status, dataGeracao, show_details }}
+                scopedColumns={{ detalhes, status, dataGeracao, show_details, details: detailRow }}
                 search={search}
                 filtroFixo={filtroFixo}
                 atualizar={atualizar}
+                tableProps={{
+                  className: 'add-this-class laboratorios-expandable-table',
+                  responsive: true,
+                  striped: true,
+                  hover: true,
+                }}
               />
             </CCardBody>
             <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>

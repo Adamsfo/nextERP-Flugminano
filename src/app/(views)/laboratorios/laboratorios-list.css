@@ -1,0 +1,52 @@
+/* Recolhe spacer + detalhe quando fechado */
+.laboratorios-expandable-table tbody tr:has(.laboratorio-detail-row-hidden),
+.laboratorios-expandable-table tbody tr:has(+ tr .laboratorio-detail-row-hidden) {
+  display: none !important;
+}
+
+/*
+ * Cada registro ocupa 3 <tr> (principal, spacer, detalhe).
+ * Zebra por registro lógico, não por linha física.
+ */
+.laboratorios-expandable-table.table-striped > tbody > tr:nth-of-type(odd) > * {
+  --cui-table-color-type: var(--cui-table-color);
+  --cui-table-bg-type: transparent;
+}
+
+.laboratorios-expandable-table.table-striped > tbody > tr:nth-child(6n + 1) > *,
+.laboratorios-expandable-table.table-striped > tbody > tr:nth-child(6n + 2) > *,
+.laboratorios-expandable-table.table-striped > tbody > tr:nth-child(6n + 3) > * {
+  --cui-table-color-type: var(--cui-table-striped-color);
+  --cui-table-bg-type: var(--cui-table-striped-bg);
+}
+
+/* Hover em grupo (principal + spacer + detalhe) */
+.laboratorios-expandable-table.table-hover > tbody > tr:nth-child(6n + 1):is(:hover, :has(+ tr:hover), :has(+ tr + tr:hover)) > *,
+.laboratorios-expandable-table.table-hover > tbody > tr:nth-child(6n + 1):is(:hover, :has(+ tr:hover), :has(+ tr + tr:hover))
+    + tr
+    > *,
+.laboratorios-expandable-table.table-hover
+  > tbody
+  > tr:nth-child(6n + 1):is(:hover, :has(+ tr:hover), :has(+ tr + tr:hover))
+  + tr
+  + tr
+  > *,
+.laboratorios-expandable-table.table-hover > tbody > tr:nth-child(6n + 4):is(:hover, :has(+ tr:hover), :has(+ tr + tr:hover)) > *,
+.laboratorios-expandable-table.table-hover > tbody > tr:nth-child(6n + 4):is(:hover, :has(+ tr:hover), :has(+ tr + tr:hover))
+    + tr
+    > *,
+.laboratorios-expandable-table.table-hover
+  > tbody
+  > tr:nth-child(6n + 4):is(:hover, :has(+ tr:hover), :has(+ tr + tr:hover))
+  + tr
+  + tr
+  > * {
+  --cui-table-color-state: var(--cui-table-hover-color);
+  --cui-table-bg-state: var(--cui-table-hover-bg);
+}
+
+/* Conteúdo expandido: continuação da linha, sem bloco separado */
+.laboratorio-detail-expanded {
+  padding: 0.25rem var(--cui-table-cell-padding-x, 0.75rem) 0.5rem;
+  border-top: 0;
+}

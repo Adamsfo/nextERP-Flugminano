@@ -103,12 +103,6 @@ const SmartTableWrapper: React.FC<SmartTableWrapperProps> = ({
                 pages: meta.totalPages,
               }
         }
-        tableProps={{
-          className: 'add-this-class',
-          responsive: true,
-          striped: true,
-          hover: true,
-        }}
         columnFilterValue={columnFilter}
         onColumnFilterChange={handleColumnFilterChange}
         onSorterChange={setColumnSorter}
@@ -123,6 +117,13 @@ const SmartTableWrapper: React.FC<SmartTableWrapperProps> = ({
         tableFilterPlaceholder="Digite para filtrar"
         // cleaner
         {...rest}
+        tableProps={{
+          className: 'add-this-class',
+          responsive: true,
+          striped: true,
+          hover: true,
+          ...rest.tableProps,
+        }}
       />
     </div>
   )

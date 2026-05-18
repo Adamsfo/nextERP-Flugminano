@@ -1,21 +1,21 @@
 import React, { ElementType } from 'react'
 import {
-  cilApplicationsSettings,
   cilBeaker,
-  cilColumns,
-  cilExcerpt,
-  cilFactory,
+  cilClipboard,
+  cilDescription,
+  cilDollar,
+  cilFolder,
+  cilGrid,
+  cilHome,
+  cilMap,
   cilPeople,
+  cilSearch,
   cilSettings,
-  cilShortText,
-  cilSpeedometer,
-  cilTruck,
+  cilShieldAlt,
   cilUser,
 } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import { CNavGroup, CNavItem } from '@coreui/react-pro'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDiagnoses } from '@fortawesome/free-solid-svg-icons'
 
 export type Badge = {
   color: string
@@ -35,7 +35,7 @@ const _nav = [
   {
     component: CNavItem,
     name: 'Dashboard',
-    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilHome} customClassName="nav-icon" />,
     badge: {
       color: 'info-gradient',
       text: 'NEW',
@@ -55,8 +55,7 @@ const _nav = [
   {
     component: CNavItem,
     name: 'Proposta Comercial',
-    // icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+    icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
     badge: {
       color: 'info-gradient',
     },
@@ -65,7 +64,7 @@ const _nav = [
   {
     component: CNavItem,
     name: 'Protocolos',
-    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+    icon: <CIcon icon={cilClipboard} customClassName="nav-icon" />,
     badge: {
       color: 'info-gradient',
     },
@@ -74,7 +73,7 @@ const _nav = [
   {
     component: CNavItem,
     name: 'Laboratórios',
-    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+    icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
     badge: {
       color: 'info-gradient',
     },
@@ -94,7 +93,7 @@ const _nav = [
     component: CNavGroup,
     name: 'Cadastro',
     href: '/notifications',
-    icon: <CIcon icon={cilApplicationsSettings} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilFolder} customClassName="nav-icon" />,
     items: [
       {
         component: CNavItem,
@@ -149,7 +148,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Análise',
-        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        icon: <CIcon icon={cilSearch} customClassName="nav-icon" />,
         badge: {
           color: 'info-gradient',
           // text: 'NEW',
@@ -159,7 +158,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Norma',
-        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        icon: <CIcon icon={cilShieldAlt} customClassName="nav-icon" />,
         badge: {
           color: 'info-gradient',
           // text: 'NEW',
@@ -169,7 +168,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Matriz',
-        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        icon: <CIcon icon={cilGrid} customClassName="nav-icon" />,
         badge: {
           color: 'info-gradient',
           // text: 'NEW',
@@ -179,7 +178,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Tabela de Preço',
-        icon: <CIcon icon={cilBeaker} customClassName="nav-icon" />,
+        icon: <CIcon icon={cilDollar} customClassName="nav-icon" />,
         badge: {
           color: 'info-gradient',
           // text: 'NEW',
@@ -189,7 +188,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Cidade',
-        icon: <CIcon icon={cilFactory} customClassName="nav-icon" />,
+        icon: <CIcon icon={cilMap} customClassName="nav-icon" />,
         badge: {
           color: 'info-gradient',
         },
