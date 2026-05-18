@@ -16,7 +16,7 @@ import {
 import { apiGeral } from '@/lib/geral'
 import SmartTableWrapper from '@/components/hooks/SmartTableWrapper'
 import CIcon from '@coreui/icons-react'
-import { cilAlignCenter, cilDelete, cilPlus } from '@coreui/icons'
+import { cilAlignCenter, cilDelete } from '@coreui/icons'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { QueryParams } from '@/types/geral'
@@ -24,62 +24,54 @@ import PermissionGate from '@/components/auth/PermissionGate'
 import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
-import { formatCurrency } from '@/components/tz/formatters'
-import { getStatusProtocoloStyle } from '@/components/tz/StatusProtocoloStyle'
-import ModalGerarLaboratorios from './ModalGerarLaboratorios'
+import { getStatusLaboratoriosStyle } from '@/components/tz/StatusLaboratoriosStyle'
+import {
+  laboratoriosEditUrl,
+  laboratoriosListQueryFromState,
+  laboratoriosListStateFromSearchParams,
+} from '@/lib/laboratoriosNav'
 
 const Page = () => {
-  const endpoint = '/protocolo'
-  const endpointApi = '/protocolo'
-  const [search, setSearch] = useState('')
+  const endpoint = '/laboratorios'
+  const endpointApi = '/laboratorios'
+  const searchParams = useSearchParams()
+  const filtroInicial = laboratoriosListStateFromSearchParams(searchParams)
+
+  const [search, setSearch] = useState(filtroInicial.search)
+  const [filtroFixo, setFiltroFixo] = useState<Record<string, string | number> | undefined>(
+    filtroInicial.filtroFixo
+  )
   const [atualizar, setAtualizar] = useState(false)
   const router = useRouter()
   const [modalMsg, setModalMsg] = useState(false)
   const [msg, setMsg] = useState('')
-  const [modalGerarLaboratorios, setModalGerarLaboratorios] = useState(false)
-  const [protocoloGerarLab, setProtocoloGerarLab] = useState<{
-    id: number
-    quantidadeAmostras: number
-    numero: string
-  } | null>(null)
-
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const filtro = searchParams.get('filter')
-    if (filtro) {
-      try {
-        setSearch(filtro)
-      } catch (error) {
-        console.error('Erro ao parsear o parâmetro:', error)
-      }
-    }
+    const next = laboratoriosListStateFromSearchParams(searchParams)
+    setSearch(next.search)
+    setFiltroFixo(next.filtroFixo)
+    setAtualizar((v) => !v)
   }, [searchParams])
 
   const columns = [
     { key: 'id', _style: { width: '6%' }, label: 'Código' },
     { key: 'numero', label: 'Número' },
-    { key: 'proposta_numero', label: 'Proposta' },
-    { key: 'createdAt', label: 'Data' },
-    { key: 'clienteNome', _style: { minWidth: '100px' }, label: 'Cliente (snapshot)' },
+    { key: 'protocolo_numero', label: 'Protocolo' },
+    { key: 'sequenciaAmostra', label: 'Seq. Amostra' },
+    { key: 'dataGeracao', label: 'Data geração' },
+    { key: 'cliente_nomeFantasia', _style: { minWidth: '100px' }, label: 'Cliente' },
     { key: 'laboratorio_nome', label: 'Laboratório' },
-    { key: 'quantidadeAmostras', label: 'Amostras' },
-    { key: 'valorTotal', label: 'Valor Total' },
     { key: 'status', label: 'Status' },
     { key: 'show_details', label: 'Ação', _style: { width: '2%' }, filter: false, sorter: false },
   ]
 
-  const valorTotal = (item: any) => {
-    return <td style={{ textAlign: 'right' }}>{formatCurrency(item.valorTotal)}</td>
-  }
-
-  const createdAt = (item: any) => {
-    const date = new Date(item.createdAt)
+  const dataGeracao = (item: any) => {
+    const date = new Date(item.dataGeracao)
     return <td>{date.toLocaleDateString()}</td>
   }
 
   const status = (item: any) => {
-    const statusStyle = getStatusProtocoloStyle(item.status)
+    const statusStyle = getStatusLaboratoriosStyle(item.status)
     return (
       <td style={{ textAlign: 'center' }}>
         <span
@@ -99,17 +91,7 @@ const Page = () => {
     )
   }
 
-  const handleGerarLaboratoriosClick = (item: any) => {
-    setProtocoloGerarLab({
-      id: item.id,
-      quantidadeAmostras: item.quantidadeAmostras,
-      numero: item.numero,
-    })
-    setModalGerarLaboratorios(true)
-  }
-
   const show_details = (item: any) => {
-    const podeExcluir = item.status === 'Protocolado' || item.status === 'Cancelado'
     return (
       <td className="py-2">
         <CDropdown variant="dropdown" style={{ position: 'unset' }}>
@@ -118,30 +100,24 @@ const Page = () => {
           </CDropdownToggle>
           <CDropdownMenu className="pt-0" style={{ cursor: 'pointer' }}>
             <CDropdownHeader className="bg-light fw-semibold py-2">Menu</CDropdownHeader>
-            <CDropdownItem onClick={() => router.push(`${endpoint}/${item.id}`)}>
-              <CTooltip content="Lançamento de Amostra para Laboratório" placement="top">
-                <CIcon
-                  icon={cilAlignCenter}
-                  size="xl"
-                  style={{ marginRight: '6px', cursor: 'pointer' }}
-                />
+            <CDropdownItem
+              onClick={() =>
+                router.push(
+                  laboratoriosEditUrl(item.id, laboratoriosListQueryFromState(search, filtroFixo))
+                )
+              }
+            >
+              <CTooltip content="Alterar laboratório" placement="top">
+                <CIcon icon={cilAlignCenter} size="xl" style={{ marginRight: '6px' }} />
               </CTooltip>
               Alterar
             </CDropdownItem>
-            <CDropdownItem onClick={() => handleGerarLaboratoriosClick(item)}>
-              <CTooltip content="Gerar registros de laboratório por amostra" placement="top">
-                <CIcon icon={cilPlus} size="xl" style={{ marginRight: '6px', cursor: 'pointer' }} />
+            <CDropdownItem onClick={() => handleExcluirClick(String(item.id))}>
+              <CTooltip content="Excluir laboratório" placement="top">
+                <CIcon icon={cilDelete} size="xl" style={{ marginRight: '6px' }} />
               </CTooltip>
-              Gerar Laboratórios
+              Excluir
             </CDropdownItem>
-            {podeExcluir ? (
-              <CDropdownItem onClick={() => handleExcluirClick(String(item.id))}>
-                <CTooltip content="Excluir protocolo" placement="top">
-                  <CIcon icon={cilDelete} size="xl" style={{ marginRight: '6px' }} />
-                </CTooltip>
-                Excluir
-              </CDropdownItem>
-            ) : null}
           </CDropdownMenu>
         </CDropdown>
       </td>
@@ -173,7 +149,7 @@ const Page = () => {
         <CCol xs={12}>
           <CCard className="mb-4">
             <CCardHeader>
-              <strong>Protocolos</strong>
+              <strong>Laboratórios</strong>
             </CCardHeader>
             <CCardBody>
               <CRow className="g-3">
@@ -189,21 +165,13 @@ const Page = () => {
               <SmartTableWrapper
                 fetchFunction={getRegistros}
                 columns={columns}
-                scopedColumns={{ status, createdAt, valorTotal, show_details }}
+                scopedColumns={{ status, dataGeracao, show_details }}
                 search={search}
+                filtroFixo={filtroFixo}
                 atualizar={atualizar}
               />
             </CCardBody>
             <ModalMsg visible={modalMsg} setVisible={setModalMsg} msg={msg}></ModalMsg>
-            {protocoloGerarLab ? (
-              <ModalGerarLaboratorios
-                visible={modalGerarLaboratorios}
-                setVisible={setModalGerarLaboratorios}
-                protocoloId={protocoloGerarLab.id}
-                quantidadeAmostras={protocoloGerarLab.quantidadeAmostras}
-                protocoloNumero={protocoloGerarLab.numero}
-              />
-            ) : null}
             {ConfirmModalComponent}
           </CCard>
         </CCol>

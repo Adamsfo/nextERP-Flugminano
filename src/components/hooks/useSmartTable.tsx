@@ -87,6 +87,8 @@ const useSmartTable = ({
     search,
     fetchFunction,
     empresaId,
+    filtroFixo,
+    filtroPorEmpresa,
     atualizar,
   ])
 

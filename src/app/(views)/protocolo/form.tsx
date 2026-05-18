@@ -524,7 +524,7 @@ export default function ProtocoloForm({ params }: { params: FormPropsEdit }) {
               <CCol md={3}>
                 <TextInputField
                   name="numero"
-                  placeholder="Número do Protocolo"
+                  placeholder="PROT20260001"
                   value={formData.numero ?? ''}
                   // onChange={handleChange}
                   invalid={!!errors.numero}

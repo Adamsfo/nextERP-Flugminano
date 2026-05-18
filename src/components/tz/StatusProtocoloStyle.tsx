@@ -11,6 +11,10 @@ export function getStatusProtocoloStyle(status: ProtocoloStatus): StatusStyle {
       color: '#0d6efd',
       background: '#e7f1ff',
     },
+    'Lab. Gerado(s)': {
+      color: '#0f766e',
+      background: '#ccfbf1',
+    },
     Recebido: {
       color: '#fd7e14',
       background: '#fff4e6',
@@ -29,5 +33,10 @@ export function getStatusProtocoloStyle(status: ProtocoloStatus): StatusStyle {
     },
   }
 
-  return map[status]
+  return (
+    map[status] ?? {
+      color: '#6c757d',
+      background: '#f8f9fa',
+    }
+  )
 }

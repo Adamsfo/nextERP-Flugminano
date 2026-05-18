@@ -117,7 +117,7 @@ const SelectCliente: React.FC<CustomMultiSelectProps> = ({
         onFilterChange={(value) => getRegistros(value)}
         options={registros}
         name="clienteId"
-        placeholder="Selecione um Jogador"
+        placeholder="Selecione um Cliente"
         search="external"
         virtualScroller
         multiple={false}

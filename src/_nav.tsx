@@ -71,6 +71,15 @@ const _nav = [
     },
     href: '/protocolo',
   },
+  {
+    component: CNavItem,
+    name: 'Laboratórios',
+    icon: <FontAwesomeIcon icon={faDiagnoses} style={{ paddingRight: '12px', fontSize: '18px' }} />,
+    badge: {
+      color: 'info-gradient',
+    },
+    href: '/laboratorios',
+  },
   // {
   //   component: CNavItem,
   //   name: 'Ticket',

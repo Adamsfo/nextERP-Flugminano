@@ -350,6 +350,7 @@ export interface PropostaComercialItem {
 
 export type ProtocoloStatus =
   | 'Protocolado'
+  | 'Lab. Gerado(s)'
   | 'Recebido'
   | 'Em análise'
   | 'Finalizado'
@@ -432,3 +433,66 @@ export interface Matriz {
   laboratorioId: number
   descricao: string
 }
+
+export type LaboratoriosStatus =
+  | 'Gerado'
+  | 'Recebido'
+  | 'Em análise'
+  | 'Finalizado'
+  | 'Cancelado'
+
+export interface Laboratorios {
+  id: number
+  protocoloId: number
+  empresaId: number
+  clienteFornecedorId: number
+  laboratorioId: number
+  numero: string
+  sequenciaAmostra: number
+  dataGeracao: Date | string
+  status: LaboratoriosStatus
+  observacao?: string
+
+  protocolo_numero?: string
+  cliente_nomeFantasia?: string
+  laboratorio_nome?: string
+}
+
+export interface LaboratoriosItem {
+  id: number
+  laboratoriosId: number
+  protocoloItemId?: number
+  analiseId?: number
+  tabelaPrecoId?: number
+  tabelaPrecoItemId?: number
+  normaId?: number
+
+  analiseNome?: string
+  metodo?: string
+  unidade?: string
+
+  prazoDias?: number
+
+  vpmMinimo?: number
+  vpmMaximo?: number
+  lqMinimo?: number
+  lqMaximo?: number
+
+  quantidade?: number
+  valorUnitario?: number
+  valorTotal?: number
+
+  resultado?: string
+  valorReferencia?: string
+  status?: string
+
+  analise_nome?: string
+  norma_descricao?: string
+}
+
+export type LaboratoriosItemStatus =
+  | 'Gerado'
+  | 'Recebido'
+  | 'Em análise'
+  | 'Finalizado'
+  | 'Cancelado'

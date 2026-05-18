@@ -100,6 +100,12 @@ class ApiGeral {
   }): Promise<ApiResponse> {
     return await api.request('/protocolo/gerar-de-proposta', 'POST', body)
   }
+
+  public async gerarLaboratoriosDeProtocolo(body: {
+    protocoloId: number
+  }): Promise<ApiResponse> {
+    return await api.request('/laboratorios/gerar-de-protocolo', 'POST', body)
+  }
 }
 
 export const apiGeral = new ApiGeral()

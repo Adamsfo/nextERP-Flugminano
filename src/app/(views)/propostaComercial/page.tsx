@@ -43,7 +43,10 @@ const Page = () => {
   const [registro, setRegistro] = useState<PropostaComercial | null>(null)
   const [modalStatus, setModalStatus] = useState(false)
   const [modalGerarProtocolo, setModalGerarProtocolo] = useState(false)
-  const [propostaGerarProtocoloId, setPropostaGerarProtocoloId] = useState(0)
+  const [propostaGerarProtocolo, setPropostaGerarProtocolo] = useState<{
+    id: number
+    quantidadeAmostras?: number
+  } | null>(null)
 
   const searchParams = useSearchParams()
 
@@ -109,7 +112,10 @@ const Page = () => {
   }
 
   const handleGerarProtocoloClick = (item: PropostaComercial) => {
-    setPropostaGerarProtocoloId(item.id)
+    setPropostaGerarProtocolo({
+      id: item.id,
+      quantidadeAmostras: item.quantidadeAmostras,
+    })
     setModalGerarProtocolo(true)
   }
 
@@ -241,11 +247,14 @@ const Page = () => {
                 setAtualizar={setAtualizar}
               />
             )}
-            <ModalGerarProtocolo
-              visible={modalGerarProtocolo}
-              setVisible={setModalGerarProtocolo}
-              propostaComercialId={propostaGerarProtocoloId}
-            />
+            {propostaGerarProtocolo ? (
+              <ModalGerarProtocolo
+                visible={modalGerarProtocolo}
+                setVisible={setModalGerarProtocolo}
+                propostaComercialId={propostaGerarProtocolo.id}
+                propostaQuantidadeAmostras={propostaGerarProtocolo.quantidadeAmostras}
+              />
+            ) : null}
             {ConfirmModalComponent}
           </CCard>
         </CCol>
