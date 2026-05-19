@@ -30,6 +30,7 @@ import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
 import { getStatusLaboratoriosStyle } from '@/components/tz/StatusLaboratoriosStyle'
+import { formatDateBr } from '@/components/tz/formatters'
 import {
   laboratoriosEditUrl,
   laboratoriosListQueryFromState,
@@ -149,6 +150,7 @@ const Page = () => {
     { key: 'sequenciaAmostra', label: 'Seq. Amostra' },
     { key: 'nome', label: 'Nome da Amostra', _style: { minWidth: '160px' } },
     { key: 'dataGeracao', label: 'Data geração' },
+    { key: 'dataEntregaCliente', label: 'Entrega Cliente' },
     { key: 'cliente_nomeFantasia', _style: { minWidth: '100px' }, label: 'Cliente' },
     { key: 'laboratorio_nome', label: 'Laboratório' },
     { key: 'status', label: 'Status' },
@@ -159,6 +161,10 @@ const Page = () => {
     const date = new Date(item.dataGeracao)
     return <td>{date.toLocaleDateString()}</td>
   }
+
+  const dataEntregaCliente = (item: Laboratorios) => (
+    <td>{formatDateBr(item.dataEntregaCliente)}</td>
+  )
 
   const status = (item: any) => {
     const statusStyle = getStatusLaboratoriosStyle(item.status)
@@ -321,6 +327,7 @@ const Page = () => {
                   nome: nomeAmostra,
                   status,
                   dataGeracao,
+                  dataEntregaCliente,
                   show_details,
                   details: detailRow,
                 }}

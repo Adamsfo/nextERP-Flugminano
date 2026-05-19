@@ -34,6 +34,18 @@ export const formatInteger = (value: string | number): string => {
   return isNaN(numericValue) ? '0' : numericValue.toLocaleString('pt-BR')
 }
 
+/** Data em dd/MM/yyyy (pt-BR). Retorna '-' se inválida ou ausente. */
+export const formatDateBr = (value?: string | Date | null): string => {
+  if (value == null || value === '') return '-'
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
+
 export const formatarCpfExibicao = (cpf?: string | null): string => {
   if (!cpf) return '-'
   const digits = cpf.replace(/\D/g, '')

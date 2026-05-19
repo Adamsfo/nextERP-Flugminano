@@ -425,6 +425,8 @@ export interface Protocolo {
   proposta_numero?: string
   cliente_nomeFantasia?: string
   laboratorio_nome?: string
+  /** Calculado: data + MAX(prazoDias) dos ProtocoloItens */
+  dataEntregaCliente?: string | null
 }
 
 export interface ProtocoloItem {
@@ -487,6 +489,8 @@ export interface Laboratorios {
   protocolo_numero?: string
   cliente_nomeFantasia?: string
   laboratorio_nome?: string
+  /** Calculado no protocolo vinculado (mesma data para todos os labs do protocolo) */
+  dataEntregaCliente?: string | null
 }
 
 export interface LaboratoriosItem {

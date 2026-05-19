@@ -24,7 +24,7 @@ import PermissionGate from '@/components/auth/PermissionGate'
 import ModalMsg from '@/components/modal/ModalMsg'
 import FilterTableWrapper from '@/components/hooks/FilterTableWrapper'
 import { useDeleteWithConfirm } from '@/components/hooks/useDeleteWithConfirm'
-import { formatCurrency } from '@/components/tz/formatters'
+import { formatCurrency, formatDateBr } from '@/components/tz/formatters'
 import { getStatusProtocoloStyle } from '@/components/tz/StatusProtocoloStyle'
 import { laboratoriosListUrl } from '@/lib/laboratoriosNav'
 import ModalGerarLaboratorios from './ModalGerarLaboratorios'
@@ -62,6 +62,7 @@ const Page = () => {
     { key: 'numero', label: 'Número' },
     { key: 'proposta_numero', label: 'Proposta' },
     { key: 'createdAt', label: 'Data' },
+    { key: 'dataEntregaCliente', label: 'Entrega Cliente' },
     { key: 'clienteNome', _style: { minWidth: '100px' }, label: 'Cliente (snapshot)' },
     { key: 'laboratorio_nome', label: 'Laboratório' },
     { key: 'quantidadeAmostras', label: 'Amostras' },
@@ -78,6 +79,10 @@ const Page = () => {
     const date = new Date(item.createdAt)
     return <td>{date.toLocaleDateString()}</td>
   }
+
+  const dataEntregaCliente = (item: { dataEntregaCliente?: string | null }) => (
+    <td>{formatDateBr(item.dataEntregaCliente)}</td>
+  )
 
   const handleLabGeradosClick = (item: { numero?: string }) => {
     const numero = item.numero?.trim()
@@ -231,7 +236,13 @@ const Page = () => {
               <SmartTableWrapper
                 fetchFunction={getRegistros}
                 columns={columns}
-                scopedColumns={{ status, createdAt, valorTotal, show_details }}
+                scopedColumns={{
+                  status,
+                  createdAt,
+                  dataEntregaCliente,
+                  valorTotal,
+                  show_details,
+                }}
                 search={search}
                 atualizar={atualizar}
               />
