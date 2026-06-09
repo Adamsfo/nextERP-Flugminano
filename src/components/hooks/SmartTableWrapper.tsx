@@ -105,7 +105,9 @@ const SmartTableWrapper: React.FC<SmartTableWrapperProps> = ({
         }
         columnFilterValue={columnFilter}
         onColumnFilterChange={handleColumnFilterChange}
-        onSorterChange={setColumnSorter}
+        onSorterChange={(value) => {
+          setColumnSorter(value as any)
+        }}
         onActivePageChange={setActivePage}
         onItemsPerPageChange={(itemsPerPage) => {
           setItemsPerPage(itemsPerPage)
