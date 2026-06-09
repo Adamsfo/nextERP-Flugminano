@@ -60,7 +60,7 @@
   "devDependencies": {
     "@babel/preset-react": "^7.24.7",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/react-input-mask": "^3.0.5",
+    "@types/react-input-mask": "2.0.4",
     "next-transpile-modules": "^10.0.1",
     "sass": "^1.77.5"
   }

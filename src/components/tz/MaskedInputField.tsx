@@ -12,6 +12,22 @@ interface MaskedInputFieldProps {
   feedbackMessage?: string
 }
 
+type InputMaskRenderProps = Pick<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'onFocus' | 'onBlur' | 'onMouseDown' | 'onPaste' | 'className' | 'style' | 'disabled' | 'readOnly'
+>
+
+/** react-input-mask@2 usa children como render prop; @types v3 descreve API diferente. */
+type InputMaskV2Props = {
+  mask: string
+  value: string
+  onChange: React.ChangeEventHandler<HTMLInputElement>
+  maskChar?: string | null
+  children: (inputProps: InputMaskRenderProps) => React.ReactElement
+}
+
+const MaskedInput = InputMask as unknown as React.ComponentType<InputMaskV2Props>
+
 const MaskedInputField: React.FC<MaskedInputFieldProps> = ({
   name,
   placeholder,
@@ -22,8 +38,8 @@ const MaskedInputField: React.FC<MaskedInputFieldProps> = ({
   feedbackMessage,
 }) => (
   <CFormFloating className="mb-3">
-    <InputMask mask={mask} value={value} onChange={onChange} maskChar={null}>
-      {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <MaskedInput mask={mask} value={value} onChange={onChange} maskChar={null}>
+      {(inputProps) => (
         <CFormInput
           {...inputProps}
           type="text"
@@ -33,7 +49,7 @@ const MaskedInputField: React.FC<MaskedInputFieldProps> = ({
           invalid={invalid}
         />
       )}
-    </InputMask>
+    </MaskedInput>
     <CFormLabel htmlFor={name}>{placeholder}</CFormLabel>
     {invalid && feedbackMessage && <CFormFeedback invalid>{feedbackMessage}</CFormFeedback>}
   </CFormFloating>
