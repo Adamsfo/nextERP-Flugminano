@@ -164,7 +164,16 @@ export default function LaboratorioForm({ params }: { params: FormPropsEdit }) {
                 />
               </CCol>
 
-              <FileUpload laboratorio={formData} />
+              <FileUpload
+                laboratorio={formData}
+                onTemplateChange={(template) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    nomeTemplateProposta: template.nomeTemplateProposta ?? undefined,
+                    fileTemplateProposta: template.fileTemplateProposta ?? undefined,
+                  }))
+                }
+              />
             </CRow>
 
             {errors.api && <div className="text-danger mt-2">{errors.api}</div>}

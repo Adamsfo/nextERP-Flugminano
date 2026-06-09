@@ -87,6 +87,39 @@ class Api {
       return { success: false, message: error.message }
     }
   }
+
+  public async downloadBlob(endpoint: string): Promise<ApiResponse<Blob>> {
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+      })
+
+      if (response.status === 403) {
+        window.location.href = '/login'
+        return { success: false, message: 'Token inválido!' }
+      }
+
+      if (!response.ok) {
+        let message = 'Erro ao baixar arquivo'
+        try {
+          const errBody = (await response.json()) as { message?: string }
+          if (errBody.message) message = errBody.message
+        } catch {
+          // resposta não JSON
+        }
+        return { success: false, message }
+      }
+
+      const data = await response.blob()
+      return { success: true, data }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro ao baixar arquivo'
+      return { success: false, message }
+    }
+  }
 }
 
 export const API_BASE_URL = BASEAPI[0]

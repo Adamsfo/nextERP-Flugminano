@@ -250,8 +250,12 @@ export interface Laboratorio {
   responsavelTecnico?: string
   registroCRQ?: string
   ativo: 'Sim' | 'Não'
-  nomeTemplateProposta?: string
-  fileTemplateProposta?: string
+  nomeTemplateProposta?: string | null
+  fileTemplateProposta?: string | null
+}
+
+export interface LaboratorioTemplateDeleteResponse {
+  success: boolean
 }
 
 export interface Analise {

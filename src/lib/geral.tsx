@@ -1,4 +1,8 @@
-import { ApiResponse, Cidade, ClienteFornecedor, Empresa, QueryParams } from '@/types/geral'
+import {
+  ApiResponse,
+  LaboratorioTemplateDeleteResponse,
+  QueryParams,
+} from '@/types/geral'
 import { api } from '@/lib/api'
 
 class ApiGeral {
@@ -168,6 +172,19 @@ class ApiGeral {
     email?: string
   }): Promise<ApiResponse> {
     return await api.request('/clienteFornecedor/verificar-duplicidade', 'GET', null, params)
+  }
+
+  public async downloadLaboratorioTemplate(id: number): Promise<ApiResponse<Blob>> {
+    return await api.downloadBlob(`/laboratorio/${id}/template/download`)
+  }
+
+  public async deleteLaboratorioTemplate(
+    id: number
+  ): Promise<ApiResponse<LaboratorioTemplateDeleteResponse>> {
+    return await api.request<LaboratorioTemplateDeleteResponse>(
+      `/laboratorio/${id}/template`,
+      'DELETE'
+    )
   }
 }
 
