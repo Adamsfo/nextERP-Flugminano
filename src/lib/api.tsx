@@ -1,10 +1,11 @@
 // lib/auth.ts
 
 import { ApiResponse, QueryParams } from '@/types/geral'
+import { parseFilenameFromContentDisposition } from '@/lib/downloadFilename'
 
 const BASEAPI = [
   'http://163.176.252.58:9000',
-  // 'http://201.71.153.116:9000',
+  // 'http://192.168.18.11:9000',
   'Homologação',
   '1.0.32',
   'https://api.sistema-agroanalise.com.br:8002',
@@ -20,6 +21,27 @@ class Api {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
+  }
+
+  /** Listagens: { data, meta }. Consulta/duplicidade: payload direto ({ encontrado } ou { exists }). */
+  private unwrapGetPayload(data: unknown): unknown {
+    if (data === null || typeof data !== 'object') return data
+
+    const record = data as Record<string, unknown>
+
+    if ('exists' in record || 'encontrado' in record) {
+      return data
+    }
+
+    if ('data' in record && 'meta' in record) {
+      return record.data
+    }
+
+    if ('data' in record && record.data !== undefined && record.data !== null) {
+      return record.data
+    }
+
+    return data
   }
 
   private buildQueryString(params: QueryParams): string {
@@ -74,8 +96,15 @@ class Api {
         return { success: false, message: data.message }
       }
 
+      if (responseType === 'json' && !response.ok) {
+        const message =
+          typeof data?.message === 'string' ? data.message : `Erro HTTP ${response.status}`
+        return { success: false, message }
+      }
+
       if (method === 'GET') {
-        return { success: true, data: data.data, meta: data.meta, headers: response.headers }
+        const payload = this.unwrapGetPayload(data) as T
+        return { success: true, data: payload, meta: data?.meta, headers: response.headers }
       }
 
       if (endpoint === '/login') {
@@ -114,7 +143,11 @@ class Api {
       }
 
       const data = await response.blob()
-      return { success: true, data }
+      const filename = parseFilenameFromContentDisposition(
+        response.headers.get('Content-Disposition')
+      )
+
+      return { success: true, data, filename, headers: response.headers }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro ao baixar arquivo'
       return { success: false, message }

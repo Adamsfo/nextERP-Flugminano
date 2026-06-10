@@ -11,6 +11,7 @@ import {
   CFormInput,
   CFormLabel,
   CRow,
+  CSpinner,
 } from '@coreui/react-pro'
 import { ClienteFornecedor, EnderecoClienteFornecedor } from '@/types/geral'
 import TextInputField from '@/components/tz/TextInputField'
@@ -18,6 +19,8 @@ import SelectField from '@/components/tz/SelectField'
 import MaskedInputField from '@/components/tz/MaskedInputField'
 import {
   getClienteDocumentoMask,
+  getClienteNomeFantasiaPlaceholder,
+  isClienteDocumentoCnpj,
   TipoPessoa,
   tipoDocumentoFromPessoa,
 } from '@/lib/clienteFornecedorForm'
@@ -39,6 +42,7 @@ type Props = {
     customValue?: unknown
   ) => void
   showObservacao?: boolean
+  consultandoDocumento?: boolean
 }
 
 export default function ClienteFornecedorFormFields({
@@ -50,6 +54,7 @@ export default function ClienteFornecedorFormFields({
   onChangeCliente,
   onChangeEndereco,
   showObservacao = true,
+  consultandoDocumento = false,
 }: Props) {
   const handleTipoPessoa = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as TipoPessoa
@@ -58,23 +63,27 @@ export default function ClienteFornecedorFormFields({
     onChangeCliente(undefined, 'cnpjCpf', '')
   }
 
+  const isCnpj = isClienteDocumentoCnpj(formData.tipoDocumento)
+
   return (
     <CRow className="g-3">
-      <CCol md={6}>
-        <TextInputField
-          name="razaoSocialNome"
-          placeholder="Nome / Razão Social *"
-          value={formData.razaoSocialNome ?? ''}
-          onChange={onChangeCliente}
-          invalid={!!errors.razaoSocialNome}
-          feedbackMessage={errors.razaoSocialNome}
-        />
-      </CCol>
+      {isCnpj && (
+        <CCol md={6}>
+          <TextInputField
+            name="razaoSocialNome"
+            placeholder="Razão Social *"
+            value={formData.razaoSocialNome ?? ''}
+            onChange={onChangeCliente}
+            invalid={!!errors.razaoSocialNome}
+            feedbackMessage={errors.razaoSocialNome}
+          />
+        </CCol>
+      )}
 
-      <CCol md={6}>
+      <CCol md={isCnpj ? 6 : 12}>
         <TextInputField
           name="nomeFantasia"
-          placeholder="Nome Fantasia"
+          placeholder={getClienteNomeFantasiaPlaceholder(formData.tipoDocumento, !isCnpj)}
           value={formData.nomeFantasia ?? ''}
           onChange={onChangeCliente}
           invalid={!!errors.nomeFantasia}
@@ -107,6 +116,12 @@ export default function ClienteFornecedorFormFields({
           feedbackMessage={errors.cnpjCpf}
           mask={getClienteDocumentoMask(formData.tipoDocumento)}
         />
+        {consultandoDocumento && (
+          <div className="small text-body-secondary mt-1 d-flex align-items-center gap-1">
+            <CSpinner size="sm" />
+            Consultando documento...
+          </div>
+        )}
       </CCol>
 
       <CCol md={3}>

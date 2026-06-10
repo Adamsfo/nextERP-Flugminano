@@ -10,6 +10,8 @@ export interface ApiResponse<T = any> {
   meta?: T
   message?: string
   headers?: Headers
+  /** Nome do arquivo retornado em downloads (Content-Disposition). */
+  filename?: string
 }
 
 export interface Login {
@@ -65,6 +67,29 @@ export interface Empresa {
   tipo: 'principal' | 'filial'
   CSCID?: string
   CSC?: string
+}
+
+export interface ConsultaDocumentoClienteResponse {
+  tipoDocumento: 'CNPJ'
+  encontrado: boolean
+  mensagem?: string
+  cliente?: {
+    razaoSocialNome?: string
+    nomeFantasia?: string
+    situacaoCadastral?: string
+    email?: string
+    telefoneFixo?: string
+    telefoneCelular?: string
+  }
+  endereco?: {
+    cep?: string
+    uf?: string
+    nomeCidade?: string
+    bairro?: string
+    rua?: string
+    numero?: string
+    complemento?: string
+  }
 }
 
 export interface ClienteFornecedor {

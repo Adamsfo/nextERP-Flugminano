@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ChangeEvent } from 'react'
+import { useState, useEffect, useCallback, ChangeEvent } from 'react'
 import {
   CButton,
   CCard,
@@ -33,10 +33,14 @@ import MaskedInputField from '@/components/tz/MaskedInputField'
 import {
   buscarEnderecoPorCep,
   getClienteDocumentoMask,
+  getClienteNomeFantasiaPlaceholder,
   initialClienteFornecedorForm,
   initialEnderecoClienteFornecedor,
+  isClienteDocumentoCnpj,
   validateClienteFornecedor,
 } from '@/lib/clienteFornecedorForm'
+import { useConsultaDocumentoCliente } from '@/components/hooks/useConsultaDocumentoCliente'
+import { CSpinner } from '@coreui/react-pro'
 
 const initialFormData: ClienteFornecedor = initialClienteFornecedorForm
 
@@ -210,7 +214,7 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
 
   const validate = () => validateClienteFornecedor(formData, 'full')
 
-  const buscarCep = async (cep: string) => {
+  const buscarCep = useCallback(async (cep: string) => {
     const digits = cep.replace(/\D/g, '')
     if (digits.length !== 8) {
       setMsg('CEP inválido. O CEP deve ter 8 dígitos.')
@@ -225,18 +229,37 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
         setModalMsg(true)
         return
       }
-      handleChangeEndereco(undefined, 'uf', data.uf)
-      handleChangeEndereco(undefined, 'nomeCidade', data.nomeCidade)
-      handleChangeEndereco(undefined, 'cidadeId', data.cidadeId)
-      handleChangeEndereco(undefined, 'bairro', data.bairro)
-      handleChangeEndereco(undefined, 'rua', data.rua)
-      handleChangeEndereco(undefined, 'complemento', data.complemento)
-      handleChangeEndereco(undefined, 'observacao', data.observacao)
+      setFormDataEndereco((prev) => ({
+        ...prev,
+        uf: data.uf ?? prev.uf,
+        nomeCidade: data.nomeCidade ?? prev.nomeCidade,
+        cidadeId: data.cidadeId ? Number(data.cidadeId) : prev.cidadeId,
+        bairro: data.bairro ?? prev.bairro,
+        rua: data.rua ?? prev.rua,
+        complemento: data.complemento ?? prev.complemento,
+        observacao: data.observacao ?? prev.observacao,
+      }))
     } catch {
       setMsg('Erro ao buscar o CEP')
       setModalMsg(true)
     }
-  }
+  }, [])
+
+  const handleMensagemConsulta = useCallback((message: string) => {
+    setMsg(message)
+    setModalMsg(true)
+  }, [])
+
+  const { consultandoDocumento } = useConsultaDocumentoCliente({
+    formData,
+    formDataEndereco,
+    setFormData,
+    setFormDataEndereco,
+    onCepCompleto: buscarCep,
+    onMensagem: handleMensagemConsulta,
+    enabled: !params.id,
+    resetKey: params.id,
+  })
 
   // useEffect(() => {
   //   // Chama buscarCep apenas se o CEP tiver 8 caracteres
@@ -297,21 +320,23 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
           </CCol> */}
 
               <div className="w-100"></div>
-              <CCol md={6}>
-                <TextInputField
-                  name="razaoSocialNome"
-                  placeholder="Razão Social"
-                  value={formData.razaoSocialNome ?? ''}
-                  onChange={handleChange}
-                  invalid={!!errors.razaoSocialNome}
-                  feedbackMessage={errors.razaoSocialNome}
-                />
-              </CCol>
+              {isClienteDocumentoCnpj(formData.tipoDocumento) && (
+                <CCol md={6}>
+                  <TextInputField
+                    name="razaoSocialNome"
+                    placeholder="Razão Social"
+                    value={formData.razaoSocialNome ?? ''}
+                    onChange={handleChange}
+                    invalid={!!errors.razaoSocialNome}
+                    feedbackMessage={errors.razaoSocialNome}
+                  />
+                </CCol>
+              )}
 
-              <CCol md={6}>
+              <CCol md={isClienteDocumentoCnpj(formData.tipoDocumento) ? 6 : 12}>
                 <TextInputField
                   name="nomeFantasia"
-                  placeholder="Nome Fantasia"
+                  placeholder={getClienteNomeFantasiaPlaceholder(formData.tipoDocumento)}
                   value={formData.nomeFantasia ?? ''}
                   onChange={handleChange}
                   invalid={!!errors.nomeFantasia}
@@ -424,6 +449,12 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
                   feedbackMessage={errors.cnpjCpf}
                   mask={getClienteDocumentoMask(formData.tipoDocumento)}
                 />
+                {consultandoDocumento && (
+                  <div className="small text-body-secondary mt-1 d-flex align-items-center gap-1">
+                    <CSpinner size="sm" />
+                    Consultando documento...
+                  </div>
+                )}
               </CCol>
 
               {/* <CCol md={2}>
@@ -599,7 +630,7 @@ export default function CidadeForm({ params }: { params: FormPropsEdit }) {
 
                       <CCol md={2}>
                         <TextInputField
-                          name="cidade"
+                          name="nomeCidade"
                           placeholder="Cidade"
                           value={formDataEndereco.nomeCidade ?? ''}
                           onChange={handleChangeEndereco}

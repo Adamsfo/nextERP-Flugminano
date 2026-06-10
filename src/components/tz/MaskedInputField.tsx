@@ -38,7 +38,7 @@ const MaskedInputField: React.FC<MaskedInputFieldProps> = ({
   feedbackMessage,
 }) => (
   <CFormFloating className="mb-3">
-    <MaskedInput mask={mask} value={value} onChange={onChange} maskChar={null}>
+    <MaskedInput mask={mask} value={value ?? ''} onChange={onChange} maskChar={null}>
       {(inputProps) => (
         <CFormInput
           {...inputProps}
@@ -46,6 +46,7 @@ const MaskedInputField: React.FC<MaskedInputFieldProps> = ({
           id={name}
           name={name}
           placeholder={placeholder}
+          value={value ?? ''}
           invalid={invalid}
         />
       )}

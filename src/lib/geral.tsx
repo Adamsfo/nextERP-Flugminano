@@ -1,5 +1,12 @@
 import {
+  enderecoTemDadosParaSalvar,
+  prepareEnderecoClienteFornecedorPayload,
+} from '@/lib/clienteFornecedorForm'
+import {
   ApiResponse,
+  ClienteFornecedor,
+  ConsultaDocumentoClienteResponse,
+  EnderecoClienteFornecedor,
   LaboratorioTemplateDeleteResponse,
   QueryParams,
 } from '@/types/geral'
@@ -170,8 +177,71 @@ class ApiGeral {
     cnpjCpf: string
     empresaId?: number
     email?: string
-  }): Promise<ApiResponse> {
-    return await api.request('/clienteFornecedor/verificar-duplicidade', 'GET', null, params)
+  }): Promise<ApiResponse<{ exists: boolean; cliente: ClienteFornecedor | null }>> {
+    const digits = params.cnpjCpf.replace(/\D/g, '')
+    const ret = await api.request<{ exists: boolean; cliente: ClienteFornecedor | null }>(
+      '/clienteFornecedor/verificar-duplicidade',
+      'GET',
+      null,
+      { ...params, cnpjCpf: digits }
+    )
+
+    if (ret.success && ret.data && typeof ret.data === 'object' && 'exists' in ret.data) {
+      return ret
+    }
+
+    if (ret.success && ret.data === undefined) {
+      return { ...ret, data: { exists: false, cliente: null } }
+    }
+
+    return ret
+  }
+
+  public async consultarDocumentoCliente(
+    documento: string
+  ): Promise<ApiResponse<ConsultaDocumentoClienteResponse>> {
+    const digits = documento.replace(/\D/g, '')
+    const ret = await api.request<ConsultaDocumentoClienteResponse>(
+      `/cliente/consultar-documento/${encodeURIComponent(digits)}`,
+      'GET'
+    )
+
+    if (ret.success && ret.data && typeof ret.data === 'object' && 'encontrado' in ret.data) {
+      return ret
+    }
+
+    if (ret.success && ret.data === undefined) {
+      return { ...ret, success: false, message: 'Resposta inválida ao consultar documento.' }
+    }
+
+    return ret
+  }
+
+  public async salvarEnderecoClienteFornecedor(
+    clienteFornecedorId: number,
+    endereco: EnderecoClienteFornecedor
+  ): Promise<ApiResponse<EnderecoClienteFornecedor>> {
+    const payload = prepareEnderecoClienteFornecedorPayload(endereco, clienteFornecedorId)
+
+    console.log('Payload Endereco', payload)
+
+    if (!enderecoTemDadosParaSalvar(payload)) {
+      return { success: true, data: payload }
+    }
+
+    const existente = await this.getResource<EnderecoClienteFornecedor>('/endereco', {
+      filters: { clienteFornecedorId },
+    })
+
+    const registro = existente.data?.[0]
+    if (registro?.id) {
+      return await this.updateResorce<EnderecoClienteFornecedor>('/endereco', {
+        ...payload,
+        id: registro.id,
+      })
+    }
+
+    return await this.createResource<EnderecoClienteFornecedor>('/endereco', payload)
   }
 
   public async downloadLaboratorioTemplate(id: number): Promise<ApiResponse<Blob>> {

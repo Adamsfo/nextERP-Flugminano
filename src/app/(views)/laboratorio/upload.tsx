@@ -20,6 +20,7 @@ import {
   CTooltip,
 } from '@coreui/react-pro'
 import { API_BASE_URL } from '@/lib/api'
+import { triggerBrowserDownload } from '@/lib/downloadFilename'
 import { apiGeral } from '@/lib/geral'
 import { Laboratorio } from '@/types/geral'
 import { AppToaster, useAppToast } from '@/components/tz/useAppToast'
@@ -120,9 +121,12 @@ const FileUpload: React.FC<Props> = ({ laboratorio, onTemplateChange }) => {
         return
       }
 
-      const url = URL.createObjectURL(ret.data)
-      window.open(url, '_blank')
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      const fileName =
+        ret.filename ||
+        arquivo.nomeTemplateProposta ||
+        'template.docx'
+
+      triggerBrowserDownload(ret.data, fileName)
       pushToast('Download iniciado.', 'success')
     } finally {
       setLoadingDownload(false)

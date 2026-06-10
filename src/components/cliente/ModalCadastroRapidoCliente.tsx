@@ -1,6 +1,6 @@
 'use client'
 
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
 import {
   CButton,
   CModal,
@@ -18,11 +18,15 @@ import {
   buscarEnderecoPorCep,
   initialClienteFornecedorForm,
   initialEnderecoClienteFornecedor,
+  mesclarEnderecoCliente,
+  prepareClienteFornecedorSavePayload,
+  prepareEnderecoClienteFornecedorPayload,
   tipoDocumentoFromPessoa,
   TipoPessoa,
   validateClienteFornecedor,
 } from '@/lib/clienteFornecedorForm'
 import { AppToastColor } from '@/components/tz/useAppToast'
+import { useConsultaDocumentoCliente } from '@/components/hooks/useConsultaDocumentoCliente'
 
 type DuplicidadeResponse = {
   exists: boolean
@@ -54,10 +58,15 @@ export default function ModalCadastroRapidoCliente({
   const [tipoPessoa, setTipoPessoa] = useState<TipoPessoa>('Fisica')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [formSession, setFormSession] = useState(0)
+
+  const formDataEnderecoRef = useRef(formDataEndereco)
+  formDataEnderecoRef.current = formDataEndereco
 
   const resetForm = () => {
     setFormData({ ...initialClienteFornecedorForm, empresaId })
     setFormDataEndereco({ ...initialEnderecoClienteFornecedor })
+    formDataEnderecoRef.current = { ...initialEnderecoClienteFornecedor }
     setTipoPessoa('Fisica')
     setErrors({})
   }
@@ -65,8 +74,38 @@ export default function ModalCadastroRapidoCliente({
   useEffect(() => {
     if (!visible) return
     resetForm()
+    setFormSession((prev) => prev + 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, empresaId])
+
+  const persistirEndereco = useCallback(
+    async (clienteId: number, endereco: EnderecoClienteFornecedor) => {
+      console.log('Endereco Form', endereco)
+      const ret = await apiGeral.salvarEnderecoClienteFornecedor(clienteId, endereco)
+      if (!ret.success) {
+        onToast?.(ret.message || 'Erro ao salvar endereço do cliente.', 'danger')
+        return false
+      }
+      return true
+    },
+    [onToast]
+  )
+
+  const selecionarClienteExistente = useCallback(
+    async (clienteId: number, endereco?: EnderecoClienteFornecedor) => {
+      const enderecoMesclado = mesclarEnderecoCliente(
+        formDataEnderecoRef.current,
+        endereco
+      )
+
+      await persistirEndereco(clienteId, enderecoMesclado)
+
+      setVisible(false)
+      onClienteSalvo(clienteId)
+      onToast?.('Cliente já cadastrado e selecionado automaticamente.', 'success')
+    },
+    [onClienteSalvo, onToast, persistirEndereco, setVisible]
+  )
 
   const handleChangeCliente = (
     e?: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -90,54 +129,78 @@ export default function ModalCadastroRapidoCliente({
       const { name, value } = e.target
       setFormDataEndereco((prev) => {
         const next = { ...prev, [name]: value }
+        formDataEnderecoRef.current = next
         if (name === 'cep' && value.length === 9) {
           void aplicarCep(value)
         }
         return next
       })
     } else if (customName) {
-      setFormDataEndereco((prev) => ({ ...prev, [customName]: customValue }))
+      setFormDataEndereco((prev) => {
+        const next = { ...prev, [customName]: customValue }
+        formDataEnderecoRef.current = next
+        return next
+      })
     }
   }
 
-  const aplicarCep = async (cep: string) => {
-    try {
-      const data = await buscarEnderecoPorCep(cep)
-      if (!data) {
-        onToast?.('CEP não encontrado.', 'warning')
-        return
+  const aplicarCep = useCallback(
+    async (cep: string): Promise<EnderecoClienteFornecedor | null> => {
+      try {
+        const data = await buscarEnderecoPorCep(cep)
+        if (!data) {
+          onToast?.('CEP não encontrado.', 'warning')
+          return null
+        }
+
+        const next = mesclarEnderecoCliente(formDataEnderecoRef.current, {
+          tipoEndereco: formDataEnderecoRef.current.tipoEndereco || 'Residencial',
+          uf: data.uf,
+          nomeCidade: data.nomeCidade,
+          cidadeId: data.cidadeId ? Number(data.cidadeId) : undefined,
+          bairro: data.bairro,
+          rua: data.rua,
+          complemento: data.complemento,
+          observacao: data.observacao,
+          cep,
+        })
+
+        formDataEnderecoRef.current = next
+        setFormDataEndereco(next)
+        return next
+      } catch {
+        onToast?.('Erro ao buscar o CEP.', 'danger')
+        return null
       }
-      setFormDataEndereco((prev) => ({
-        ...prev,
-        uf: data.uf ?? prev.uf,
-        nomeCidade: data.nomeCidade ?? prev.nomeCidade,
-        cidadeId: data.cidadeId ? Number(data.cidadeId) : prev.cidadeId,
-        bairro: data.bairro ?? prev.bairro,
-        rua: data.rua ?? prev.rua,
-        complemento: data.complemento ?? prev.complemento,
-        observacao: data.observacao ?? prev.observacao,
-      }))
-    } catch {
-      onToast?.('Erro ao buscar o CEP.', 'danger')
-    }
-  }
+    },
+    [onToast]
+  )
 
   const fechar = () => {
     if (!saving) setVisible(false)
   }
 
-  const verificarDuplicidade = async (): Promise<ClienteFornecedor | null | 'erro'> => {
+  const verificarDuplicidade = async (
+    documento: string
+  ): Promise<ClienteFornecedor | null | 'erro'> => {
     const ret = await apiGeral.verificarClienteDuplicidade({
-      cnpjCpf: formData.cnpjCpf,
+      cnpjCpf: documento,
       email: formData.email?.trim() || undefined,
       empresaId,
     })
+
     if (!ret.success) {
       onToast?.(ret.message || 'Erro ao verificar duplicidade.', 'danger')
       return 'erro'
     }
+
     const payload = ret.data as DuplicidadeResponse | undefined
-    if (payload?.exists && payload.cliente) {
+    if (!payload || typeof payload !== 'object') {
+      onToast?.('Resposta inválida ao verificar duplicidade.', 'danger')
+      return 'erro'
+    }
+
+    if (payload.exists === true && payload.cliente) {
       return payload.cliente
     }
     return null
@@ -146,10 +209,10 @@ export default function ModalCadastroRapidoCliente({
   const salvar = async () => {
     setErrors({})
     const tipoDocumento = tipoDocumentoFromPessoa(tipoPessoa)
-    const validationErrors = validateClienteFornecedor(
-      { ...formData, tipoDocumento },
-      'quick'
-    )
+    const documentoDigits = formData.cnpjCpf.replace(/\D/g, '')
+    const formComTipo = { ...formData, tipoDocumento }
+
+    const validationErrors = validateClienteFornecedor(formComTipo, 'quick')
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
@@ -162,42 +225,50 @@ export default function ModalCadastroRapidoCliente({
 
     setSaving(true)
     try {
-      const existente = await verificarDuplicidade()
+      const existente = await verificarDuplicidade(documentoDigits)
       if (existente === 'erro') return
 
       if (existente) {
-        const confirmar = window.confirm(
-          'Cliente já cadastrado.\n\nDeseja selecionar o cliente existente?'
-        )
-        if (confirmar) {
-          setVisible(false)
-          onClienteSalvo(existente.id)
-        } else {
-          setErrors({ cnpjCpf: 'Cliente já cadastrado.' })
-        }
+        await selecionarClienteExistente(existente.id, formDataEnderecoRef.current)
         return
       }
 
-      const payload: ClienteFornecedor = {
-        ...formData,
+      const payload = prepareClienteFornecedorSavePayload(formData, {
         empresaId,
-        tipo: 'Cliente',
         tipoDocumento,
-        consumidorFinal: formData.consumidorFinal || 'Sim',
-        contribuinte: formData.contribuinte || 'Sim',
-      }
+      })
+
+      const enderecoPayload = prepareEnderecoClienteFornecedorPayload(
+        formDataEnderecoRef.current,
+        0
+      )
+
+      console.log('Endereco Form', formDataEnderecoRef.current)
+      console.log('Payload Cliente', payload)
+      console.log('Payload Endereco', enderecoPayload)
 
       const ret = await apiGeral.createResource<ClienteFornecedor>('/clienteFornecedor', payload)
+
       if (!ret.success || !ret.data) {
         onToast?.(ret.message || 'Erro ao cadastrar cliente.', 'danger')
         return
       }
 
       const novoId = (ret.data as ClienteFornecedor).id
-      await apiGeral.createResource<EnderecoClienteFornecedor>('/endereco', {
-        ...formDataEndereco,
-        clienteFornecedorId: novoId,
-      })
+      if (novoId == null) {
+        onToast?.('Cliente salvo, mas ID não retornado pela API.', 'danger')
+        return
+      }
+
+      const retEndereco = await apiGeral.salvarEnderecoClienteFornecedor(
+        novoId,
+        formDataEnderecoRef.current
+      )
+
+      if (!retEndereco.success) {
+        onToast?.(retEndereco.message || 'Cliente salvo, mas erro ao salvar endereço.', 'danger')
+        return
+      }
 
       onToast?.('Cliente cadastrado com sucesso', 'success')
       setVisible(false)
@@ -215,8 +286,25 @@ export default function ModalCadastroRapidoCliente({
       ...prev,
       tipoDocumento: tipoDocumentoFromPessoa(tipo),
       cnpjCpf: '',
+      razaoSocialNome: '',
+      nomeFantasia: '',
     }))
   }
+
+  const tipoDocumentoAtual = tipoDocumentoFromPessoa(tipoPessoa)
+
+  const { consultandoDocumento } = useConsultaDocumentoCliente({
+    formData: { ...formData, tipoDocumento: tipoDocumentoAtual },
+    formDataEndereco,
+    setFormData,
+    setFormDataEndereco,
+    onCepCompleto: aplicarCep,
+    onToast,
+    onClienteExistente: selecionarClienteExistente,
+    empresaId,
+    enabled: visible && empresaId > 0,
+    resetKey: formSession,
+  })
 
   return (
     <PermissionGate permission={2}>
@@ -226,13 +314,14 @@ export default function ModalCadastroRapidoCliente({
         </CModalHeader>
         <CModalBody>
           <ClienteFornecedorFormFields
-            formData={{ ...formData, tipoDocumento: tipoDocumentoFromPessoa(tipoPessoa) }}
+            formData={{ ...formData, tipoDocumento: tipoDocumentoAtual }}
             formDataEndereco={formDataEndereco}
             errors={errors}
             tipoPessoa={tipoPessoa}
             onTipoPessoaChange={handleTipoPessoaChange}
             onChangeCliente={handleChangeCliente}
             onChangeEndereco={handleChangeEndereco}
+            consultandoDocumento={consultandoDocumento}
           />
         </CModalBody>
         <CModalFooter>

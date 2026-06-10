@@ -20,7 +20,12 @@ import {
   CFormLabel,
   CFormSelect,
   CHeader,
+  CModal,
+  CModalBody,
+  CModalHeader,
+  CModalTitle,
   CRow,
+  CSpinner,
   CTooltip,
 } from '@coreui/react-pro'
 import { useRouter } from 'next/navigation'
@@ -64,6 +69,11 @@ import {
 import { prepararItemMonetarioParaApi } from '@/lib/monetarioApi'
 import ModalCadastroRapidoCliente from '@/components/cliente/ModalCadastroRapidoCliente'
 import { AppToaster, useAppToast } from '@/components/tz/useAppToast'
+import {
+  focarPrimeiroCampoInvalidoProposta,
+  resumoCamposInvalidosProposta,
+  validatePropostaComercialForm,
+} from '@/lib/propostaComercialForm'
 
 const initialFormData: PropostaComercial = {
   id: 0,
@@ -117,6 +127,9 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
   const [item, setItem] = useState<PropostaComercialItem | null>(null)
   const [index, setIndex] = useState(0)
   const [modalItem, setModalItem] = useState(false)
+  const [loadingCadastro, setLoadingCadastro] = useState(false)
+  const [resumoValidacao, setResumoValidacao] = useState<string[]>([])
+  const submittingRef = useRef(false)
 
   const getRegistros = async (params: QueryParams) => {
     const reg = await apiGeral.getResource<PropostaComercialItem>(endpointApiItem, {
@@ -266,16 +279,31 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (submittingRef.current || loadingCadastro) return
+
     setErrors({})
-    const validationErrors = validate()
+    setResumoValidacao([])
+
+    const validationErrors = validatePropostaComercialForm(formData, {
+      isCreate: !params.id,
+      empresaIdSelecionada,
+    })
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      setResumoValidacao(resumoCamposInvalidosProposta(validationErrors))
+      requestAnimationFrame(() => focarPrimeiroCampoInvalidoProposta(validationErrors))
       return
     }
+
+    submittingRef.current = true
+    setLoadingCadastro(true)
 
     try {
       let ret: { data?: { id: number }; success?: boolean; message?: string } = {}
       const { valorTotal, ...payload } = formData
+
       if (params.id) {
         ret = await apiGeral.updateResorce<Registro>(endpointApi, payload)
       } else {
@@ -285,58 +313,68 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
         })
       }
 
-      // Salvar os itens adicionados
+      if (!ret.success || !ret.data?.id) {
+        const msg = ret.message || 'Ocorreu um erro ao cadastrar a proposta.'
+        setErrors({ api: msg })
+        pushToast(msg, 'danger')
+        return
+      }
+
       for (const item of itensAdicionados) {
-        item.propostaComercialId = ret.data?.id || 0
-        await apiGeral.createResource<PropostaComercialItem>(
+        item.propostaComercialId = ret.data.id
+        const itemRet = await apiGeral.createResource<PropostaComercialItem>(
           endpointApiItem,
           prepararItemMonetarioParaApi(item)
         )
-      }
-
-      // Atualizar os itens modificados
-      for (const item of itensAtualizados) {
-        if (item.id) {
-          await apiGeral.updateResorce<PropostaComercialItem>(
-            endpointApiItem,
-            prepararItemMonetarioParaApi(item)
-          )
+        if (!itemRet.success) {
+          throw new Error(itemRet.message || 'Erro ao salvar item da proposta.')
         }
       }
 
-      // Excluir os itens removidos
+      for (const item of itensAtualizados) {
+        if (item.id) {
+          const itemRet = await apiGeral.updateResorce<PropostaComercialItem>(
+            endpointApiItem,
+            prepararItemMonetarioParaApi(item)
+          )
+          if (!itemRet.success) {
+            throw new Error(itemRet.message || 'Erro ao atualizar item da proposta.')
+          }
+        }
+      }
+
       for (const itemId of itensExcluidos) {
         await apiGeral.deleteResorce(endpointApiItem, itemId.toString())
       }
 
-      if (!ret.success) {
-        setErrors({ api: ret.message || 'Erro desconhecido' })
-        return
-      }
-      router.push(`${endpoint}?filter=${ret.data?.id}`)
+      pushToast(
+        params.id ? 'Proposta atualizada com sucesso.' : 'Proposta cadastrada com sucesso.',
+        'success'
+      )
+      router.push(`${endpoint}?filter=${ret.data.id}`)
       if (params.onClose) {
         params.onClose()
       }
     } catch (error) {
       console.error('Erro ao salvar registro:', error)
+      const msg =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Ocorreu um erro ao cadastrar a proposta.'
+      setErrors({ api: msg })
+      pushToast('Ocorreu um erro ao cadastrar a proposta.', 'danger')
+    } finally {
+      submittingRef.current = false
+      setLoadingCadastro(false)
     }
   }
 
   const handleVoltar = async () => {
+    if (loadingCadastro) return
     router.push(endpoint)
     if (params.onClose) {
       params.onClose()
     }
-  }
-
-  const validate = () => {
-    const newErrors: { [key: string]: string } = {}
-
-    if (!formData.clienteNome) newErrors.clienteNome = 'Nome do cliente é obrigatório.'
-    // if (!formData.razaoSocialNome) newErrors.razaoSocialNome = 'Razão social é obrigatório.'
-    if (!formData.clienteDocumento) newErrors.clienteDocumento = 'CPF / CNPJ é obrigatório.'
-
-    return newErrors
   }
 
   const getRegistrosTabelaPrecoItem = async (params: QueryParams) => {
@@ -512,6 +550,16 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
             </strong>
           </CCardHeader>
           <CCardBody>
+            {resumoValidacao.length > 0 && (
+              <div className="alert alert-danger" role="alert">
+                <strong>Preencha os campos obrigatórios:</strong>
+                <ul className="mb-0 mt-2">
+                  {resumoValidacao.map((label) => (
+                    <li key={label}>{label}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <CRow>
               <CCol md={1}>
                 <TextInputField
@@ -582,7 +630,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                 ></SelectLaboratorio>
               </CCol>
 
-              <CCol md={4}>
+              <CCol md={4} id="field-clienteFornecedorId">
                 <SelectCliente
                   id={
                     formData.clienteFornecedorId > 0 ? formData.clienteFornecedorId : null
@@ -769,7 +817,7 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
                 </CCard>
               </CCol>
 
-              <CCol md={3}>
+              <CCol md={3} id="field-matrizId">
                 <SelectMatriz
                   id={formData.matrizId}
                   setId={(matrizId) => handleChange(undefined, 'matrizId', matrizId)}
@@ -1049,10 +1097,26 @@ export default function PropostaComercialForm({ params }: { params: FormPropsEdi
               onToast={pushToast}
             />
             <AppToaster toasts={toasts} />
+            <CModal alignment="center" visible={loadingCadastro} backdrop="static" keyboard={false}>
+              <CModalHeader>
+                <CModalTitle>Cadastrando proposta</CModalTitle>
+              </CModalHeader>
+              <CModalBody className="text-center py-4">
+                <CSpinner color="primary" style={{ width: '3rem', height: '3rem' }} />
+                <p className="mt-3 mb-1">
+                  Aguarde, estamos processando a proposta comercial.
+                </p>
+                <p className="text-body-secondary small mb-0">Não feche esta janela.</p>
+              </CModalBody>
+            </CModal>
           </CCardBody>
           <CCardFooter>
-            <CButtonBack onClick={handleVoltar} />
-            <CButtonSave type="submit" label={params.id ? 'Atualizar' : 'Cadastrar'} />
+            <CButtonBack onClick={handleVoltar} disabled={loadingCadastro} />
+            <CButtonSave
+              type="submit"
+              label={params.id ? 'Atualizar' : 'Cadastrar'}
+              disabled={loadingCadastro}
+            />
           </CCardFooter>
         </CCard>
       </CForm>
